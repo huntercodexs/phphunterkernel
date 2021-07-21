@@ -1,0 +1,38 @@
+{
+    "name": "huntercodexs/phphunterkernel",
+    "type": "library",
+    "description": "The Source Kernel to Mini Framework phpHunter",
+    "keywords": ["framework","mini","php","hunter"],
+    "homepage": "http://www.phphunter.com/phphunterkernel",
+    "license": "MIT",
+    "version": "1.0.0",
+    "authors": [
+        {
+            "name": "Hunter Codexs",
+            "email": "huntercodexs@gmail.com"
+        }
+    ],
+    "require": {
+    },
+    "require-dev": {
+    },
+    "autoload": {
+        "psr-4": {
+            "PhpHunter\\": "src/",
+            "PhpHunterCore\\": "src/Core/",
+            "PhpHunterDatabase\\": "src/Database/",
+            "PhpHunterHandler\\": "src/Handler/",
+            "PhpHunterHelper\\": "src/Helper/",
+            "PhpHunterUtil\\": "src/Util/",
+            "PhpHunterAuth\\": "src/Auth/",
+            "PhpHunterSecurity\\": "src/Secutiry/",
+            "PhpHunterORM\\": "src/ORM/",
+            "PhpHunterMiddleware\\": "src/Middleware/",
+            "PhpHunterRouter\\": "src/Router/"
+        }
+    },
+    "scripts": {
+    },
+    "suggest": {
+    }
+}
