@@ -3,7 +3,7 @@
     "type": "library",
     "description": "The Source Kernel to Mini Framework phpHunter",
     "keywords": ["framework","mini","php","hunter"],
-    "homepage": "http://www.phphunter.com/phphunterkernel",
+    "homepage": "https://www.phphunter.com/phphunterkernel",
     "license": "MIT",
     "version": "1.0.0",
     "authors": [
@@ -19,16 +19,15 @@
     "autoload": {
         "psr-4": {
             "PhpHunter\\": "src/",
-            "PhpHunterCore\\": "src/Core/",
-            "PhpHunterDatabase\\": "src/Database/",
-            "PhpHunterHandler\\": "src/Handler/",
-            "PhpHunterHelper\\": "src/Helper/",
-            "PhpHunterUtil\\": "src/Util/",
-            "PhpHunterAuth\\": "src/Auth/",
-            "PhpHunterSecurity\\": "src/Secutiry/",
-            "PhpHunterORM\\": "src/ORM/",
-            "PhpHunterMiddleware\\": "src/Middleware/",
-            "PhpHunterRouter\\": "src/Router/"
+            "PhpHunter\\Abstractions\\": "src/Abstractors/",
+            "PhpHunter\\Controllers\\": "src/Controllers/",
+            "PhpHunter\\Middlewares\\": "src/Middlewares/",
+            "PhpHunter\\Models\\": "src/Models/",
+            "PhpHunter\\ORM\\": "src/ORM/",
+            "PhpHunter\\Security\\": "src/Security/",
+            "PhpHunter\\Services\\": "src/Services/",
+            "PhpHunter\\Utils\\": "src/Utils/",
+            "PhpHunter\\Views\\": "src/Views/"
         }
     },
     "scripts": {
