@@ -34,7 +34,7 @@ class DumperController
      * @description Dump Error
      * @param string $data #Mandatory
      */
-    public static function dumpError(string|array $data)
+    public static function dumpError(string $data): void
     {
         if (is_array($data)) {
             var_dump('<pre>', $data, '</pre>');
@@ -51,12 +51,8 @@ class DumperController
      */
     public static function smartDumper(string $data, bool $die = false)
     {
-        echo "<pre>";
-        echo get_called_class()."<br />";
-        var_dump(debug_print_backtrace())."<br />";
-        var_dump(debug_backtrace())."<br />";
         echo "smartDumper say: {$data}"."<br />";
-        echo "</pre>";
         if ($die) die;
     }
+
 }
