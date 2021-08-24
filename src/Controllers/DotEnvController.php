@@ -8,7 +8,7 @@ use PhpHunter\Abstractions\ParametersAbstract;
 class DotEnvController extends ParametersAbstract
 {
     private string $rootPathProject;
-    private $handlerEnvFile;
+    private string $handlerEnvFile;
 
     /**
      * @description Constructor Class

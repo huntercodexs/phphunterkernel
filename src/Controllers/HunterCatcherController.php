@@ -15,17 +15,12 @@ class HunterCatcherController extends \Exception
     /**
      * @description Hunter Catcher
      * @param string $data #Mandatory
+     * @param int $code #Mandatory
      * @param bool $die #Optional
-     * @throws HunterCatcherController
      */
-    public static function hunterCatcher(string $data, bool $die = false)
+    public static function hunterCatcher(string $data, int $code = 500, bool $die = false)
     {
-        try {
-            HunterCatcherController::treatCatcher($data);
-        } catch(Exception $e) {
-            throw new HunterCatcherController($e->getMessage(), 500);
-        }
-
+        HunterCatcherController::treatCatcher($data, $code);
         if ($die) die;
     }
 
@@ -54,8 +49,9 @@ class HunterCatcherController extends \Exception
     /**
      * @description Treat Catcher
      * @param string $data #Mandatory
+     * @param int $code #Mandatory
      */
-    private static function treatCatcher(string $data)
+    private static function treatCatcher(string $data, int $code)
     {
         $css = './vendor/huntercodexs/phphunterkernel/src/Assets/css/phphunterkernel.css';
         $html = './vendor/huntercodexs/phphunterkernel/src/Assets/templates/catcher.hunter.html';
@@ -68,8 +64,12 @@ class HunterCatcherController extends \Exception
 
             if (preg_match('/{{{!default_message!}}}/', $render_line, $t, PREG_OFFSET_CAPTURE)) {
                 echo str_replace('{{{!default_message!}}}', 'An error occurred while processing the information', $render_line);
+            } elseif (preg_match('/{{{!error_code!}}}/', $render_line, $t, PREG_OFFSET_CAPTURE)) {
+                echo str_replace('{{{!error_code!}}}', $code, $render_line);
             } elseif (preg_match('/{{{!tracer!}}}/', $render_line, $t, PREG_OFFSET_CAPTURE)) {
-                var_dump(debug_print_backtrace());
+                echo "<pre>";
+                debug_print_backtrace();
+                echo "</pre>";
                 echo "<br />";
             } elseif (preg_match('/{{{!location!}}}/', $render_line, $t, PREG_OFFSET_CAPTURE)) {
                 echo get_called_class()."<br />";
@@ -79,9 +79,9 @@ class HunterCatcherController extends \Exception
                     An error occurred in the file: <strong>{$extract_trace['file']}</strong>, line: ${extract_trace['line']}<br />
                     during call was made to the file:  <strong>{$extract_trace[0]['file']}</strong>, line {$extract_trace[0]['line']}<br />
                     where the class: <strong>{$extract_trace['class']}</strong><br />
-                    hasda failure in the method: <strong>{$extract_trace['function']}</strong><br />
+                    has a failure in the method: <strong>{$extract_trace['function']}</strong><br />
                     <span>
-                        and as result in following message: <strong>{$extract_trace['message']}</strong><br />
+                        and as resulting in the following message: <strong>{$extract_trace['message']}</strong><br />
                     </span></p><br />";
 
                 echo "<strong>";

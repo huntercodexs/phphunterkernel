@@ -7,7 +7,7 @@
 body {
     overflow: hidden;
     overflow-y: auto;
-    background: #F1F1F1;
+    background: #232323;
 }
 
 h1 {
@@ -17,25 +17,19 @@ h1 {
 
 #php-hunter-catcher-container-left {
     width: 50%;
-    height: 100%;
-    position: fixed;
-    z-index: 1;
-    left: 0px;
-    top: 0px;
-    background: #343434;
+    height: 57%;
+    float: left;
+    background: #F1F1F1;
+    overflow: auto;
 }
 
 #php-hunter-catcher-container-right {
     width: 48%;
-    height: 100%;
+    height: 50%;
     padding: 1%;
-    position: fixed;
-    z-index: 1;
-    right: 0px;
-    top: 0px;
+    float: right;
+    overflow: auto;
     background: #232323;
-    overflow: hidden;
-    overflow-y: auto;
 }
 
 .div-hunter-catcher-message {
@@ -54,7 +48,7 @@ h1 {
 }
 
 .div-icon-error {
-    width: 35px;
+    width: 32px;
     height: auto;
     background: #ce1111;
     color: #ffffff;
@@ -64,12 +58,12 @@ h1 {
     text-align: center;
     float: left;
     margin-right: 10px;
-    border-radius: 5px;
+    border-radius: 100px;
 }
 
 .div-hunter-catcher-title {
-    width: 96%;
-    padding: 2%;
+    width: 98%;
+    padding: 1%;
     height: auto;
     background: #343434;
     color: #00C8F9;
@@ -77,8 +71,8 @@ h1 {
 }
 
 .div-hunter-catcher-trace {
-    width: 96%;
-    padding: 2%;
+    width: 98%;
+    padding: 1%;
     height: auto;
     background: #232773;
     color: #00c8f9;
@@ -86,8 +80,8 @@ h1 {
 }
 
 .div-hunter-catcher-location {
-    width: 96%;
-    padding: 2%;
+    width: 98%;
+    padding: 1%;
     height: auto;
     background: #e5e5e5;
     color: #444444;
@@ -95,9 +89,8 @@ h1 {
 }
 
 .div-hunter-catcher-details {
-    width: 96%;
-    padding: 2%;
-    height: 60%;
+    width: 98%;
+    padding: 1%;
     background: #F1F1F1;
     color: #121212;
     float: left;
@@ -109,9 +102,10 @@ h1 {
 }
 
 .div-hunter-catcher-structure {
+    width: 98%;
     background: #232323;
     color: #eeda5a;
-    padding-bottom: 150px;
+    padding: 1% 1% 150px;
 }
 
 .div-hunter-catcher-structure pre {

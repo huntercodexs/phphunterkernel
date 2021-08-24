@@ -3,6 +3,7 @@
 namespace PhpHunter\Utils;
 
 use PhpHunter\Controllers\DumperController;
+use PhpHunter\Controllers\HunterCatcherController;
 
 class FileTools
 {
@@ -46,7 +47,7 @@ class FileTools
     public static function checkReadableFile(string $file = "")
     {
         if (!is_readable($file) || !is_file($file) || !file_exists($file)) {
-            DumperController::smartDumper("Unabled to read file: {$file}", true);
+            HunterCatcherController::hunterCatcher("Unable to read file: {$file}", 500, true);
         }
     }
 

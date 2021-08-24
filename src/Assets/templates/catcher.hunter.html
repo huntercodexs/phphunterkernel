@@ -1,35 +1,40 @@
+
+<div class='div-hunter-catcher-title'>
+    <div class='div-icon-error'>!</div>
+    <h1 class='text-white-color'>PhpHunter Error {{{!error_code!}}}</h1>
+    {{{!default_message!}}}<br />
+</div>
+
+<div class='div-hunter-catcher-trace'>
+    <h1>Tracer</h1>
+    {{{!tracer!}}}
+</div>
+
+<div class='div-hunter-catcher-location'>
+    <h1>Location</h1>
+    {{{!location!}}}
+</div>
+
 <div id='php-hunter-catcher-container-left'>
-
-    <div class='div-hunter-catcher-title'>
-        <div class='div-icon-error'>X</div>
-        <h1 class='text-white-color'>PhpHunter Error</h1>
-        {{{!default_message!}}}<br />
-    </div>
-
-    <div class='div-hunter-catcher-trace'>
-        <h1>Trace</h1>
-        {{{!tracer!}}}
-    </div>
-
-    <div class='div-hunter-catcher-location'>
-        <h1>Location</h1>
-        {{{!location!}}}
-    </div>
-
     <div class='div-hunter-catcher-details'>
         <h1>Details</h1>
         {{{!details!}}}
     </div>
 </div>
 
-<div class='div-hunter-catcher-message'>
-    <h1>Message</h1>
-    {{{!message!}}}
-</div>
-
 <div id='php-hunter-catcher-container-right'>
     <div class='div-hunter-catcher-structure'>
         <h1>Structure</h1>
+            <!--<pre>
+                if ($a == $b) {
+                    exit();
+                }
+            </pre>-->
         {{{!structure!}}}
     </div>
+</div>
+
+<div class='div-hunter-catcher-message'>
+    <h1>Message</h1>
+    {{{!message!}}}
 </div>
