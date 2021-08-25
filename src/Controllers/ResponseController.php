@@ -22,7 +22,11 @@ class ResponseController extends StatusCodeAbstract
     public function jsonResponse($data)
     {
         $this->setHeaders();
-        echo $data;
+        if (is_array($data)) {
+            echo json_encode($data);
+        } else {
+            echo $data;
+        }
         exit();
     }
 

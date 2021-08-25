@@ -13,6 +13,20 @@ class HunterCatcherController extends \Exception
     }
 
     /**
+     * @description Hunter Api Catcher
+     * @param array $data #Mandatory
+     * @param int $code #Mandatory
+     * @param bool $die #Optional
+     */
+    public static function hunterApiCatcher(array $data, int $code = 500, bool $die = false)
+    {
+        $response = new ResponseController();
+        $response->setStatusCode($code);
+        $response->jsonResponse($data);
+        if ($die) die;
+    }
+
+    /**
      * @description Hunter Catcher
      * @param string $data #Mandatory
      * @param int $code #Mandatory
@@ -41,7 +55,6 @@ class HunterCatcherController extends \Exception
             $trace["function"] = $data[$k]['function'];
             $trace["class"] = $data[$k]['class'];
             $trace["type"] = $data[$k]['type'];
-            $trace['message'] = ($data[$k]['args'][0]) ?? "";
         }
         return array_merge($data, $trace);
     }
@@ -81,7 +94,7 @@ class HunterCatcherController extends \Exception
                     where the class: <strong>{$extract_trace['class']}</strong><br />
                     has a failure in the method: <strong>{$extract_trace['function']}</strong><br />
                     <span>
-                        and as resulting in the following message: <strong>{$extract_trace['message']}</strong><br />
+                        and as resulting in the following message: <strong>{$data}</strong><br />
                     </span></p><br />";
 
                 echo "<strong>";

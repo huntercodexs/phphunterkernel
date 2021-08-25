@@ -3,6 +3,7 @@
 namespace PhpHunter\Controllers;
 
 use PhpHunter\Abstractions\RequestAbstract;
+use PhpHunter\Configuration\PhpHunterSetup;
 
 class ApiRouterController extends RequestAbstract
 {
@@ -20,7 +21,7 @@ class ApiRouterController extends RequestAbstract
     private string $staticMiddleware;
 
     /**
-     * @description When Controller is called
+     * @description When Controller is set
      */
     private string $controllerClass;
     private string $methodController;
@@ -45,11 +46,11 @@ class ApiRouterController extends RequestAbstract
 
     /**
      * @description Constructor Class
+     * @throws HunterCatcherController
      */
-    public function __construct($md_nm = "Tasks\\Middlewares\\", $md_ct = "Tasks\\Controllers\\")
+    public function __construct()
     {
-        $this->middlewareNamespace = $md_nm;
-        $this->controllerNamespace = $md_ct;
+        $this->configurationSetup();
         $this->resetSettings();
         $this->setParams();
     }
@@ -60,6 +61,35 @@ class ApiRouterController extends RequestAbstract
     public function __destruct()
     {
         $this->resetSettings();
+    }
+
+    /**
+     * @description API Reset Settings
+     * @throws HunterCatcherController
+     */
+    private function configurationSetup(): void
+    {
+        $app_config = new SetupController();
+        if (!file_exists($app_config->getAppConfigurationSetup())) {
+            throw new HunterCatcherController(
+                'Missing Configuration File PhpHunter Setup',
+                500
+            );
+        }
+
+        require_once $app_config->getAppConfigurationSetup();
+
+        //TODO: Melhorar a lógica do trecho de código abaixo
+        try {
+            $this->middlewareNamespace = PhpHunterSetup::getConfig()['namespace']['middlewares'];
+            $this->controllerNamespace = PhpHunterSetup::getConfig()['namespace']['controllers'];
+        } catch (\Exception $e) {
+            HunterCatcherController::hunterApiCatcher(
+                ['error' => 'Configuration Error to PhpHunter Setup, '.$e->getMessage()],
+                500,
+                true
+            );
+        }
     }
 
     /**
@@ -119,7 +149,7 @@ class ApiRouterController extends RequestAbstract
      */
     public function showRouterDetails(): object
     {
-        DumperController::dump([
+        DumperController::dump((string)[
             "HTTP-METHOD" => $this->routeVerb,
             "ROUTE" => $this->routeRoute,
             "URI" => $this->routeUri
@@ -179,7 +209,11 @@ class ApiRouterController extends RequestAbstract
             /*Only Controller*/
             $controller = $callback1;
         } else {
-            die("Missing Middleware/Controller !");
+            HunterCatcherController::hunterApiCatcher(
+                ["error" => "Missing Middleware/Controller !"],
+                500,
+                true
+            );
         }
 
         if ($middleware != "") {
@@ -243,7 +277,11 @@ class ApiRouterController extends RequestAbstract
      */
     public function exception(): void
     {
-        die("API Exception: Resource Not Found !");
+        HunterCatcherController::hunterApiCatcher(
+            ["exception" => "Route Not Found !"],
+            404,
+            true
+        );
     }
 
     /**
@@ -268,7 +306,26 @@ class ApiRouterController extends RequestAbstract
     private function checkRequestMethod(string $method)
     {
         if ($this->requestMethod != $method) {
-            die("HTTP Method Not Allowed !");
+            HunterCatcherController::hunterApiCatcher(
+                ["error" => "HTTP Method Not Allowed !"],
+                405,
+                true
+            );
+        }
+    }
+
+    /**
+     * @description Prevent Wrong Route
+     * @param string $route #Mandatory
+     */
+    private function preventWrongRoute(string $route)
+    {
+        if (!$route) {
+            HunterCatcherController::hunterApiCatcher(
+                ["error" => "Missing Configuration Route"],
+                500,
+                true
+            );
         }
     }
 
@@ -278,14 +335,10 @@ class ApiRouterController extends RequestAbstract
      * @param string $callback1 #Middleware/Optional
      * @param string $callback2 #Controller/Mandatory
     */
-    public function get(string $route = "", string $callback1 = "", string $callback2 = "")
+    public function get(string $route = "", string $callback1 = "", string $callback2 = ""): object
     {
-        if (!$route) {
-            die("Route Error !");
-        }
-
+        $this->preventWrongRoute($route);
         $this->routerRunner("GET", $route, $callback1, $callback2);
-
         return $this;
     }
 
@@ -295,14 +348,10 @@ class ApiRouterController extends RequestAbstract
      * @param string $callback1 #Middleware/Optional
      * @param string $callback2 #Controller/Mandatory
      */
-    public function post(string $route = "", string $callback1 = "", string $callback2 = "")
+    public function post(string $route = "", string $callback1 = "", string $callback2 = ""): object
     {
-        if (!$route) {
-            die("Route Error !");
-        }
-
+        $this->preventWrongRoute($route);
         $this->routerRunner("POST", $route, $callback1, $callback2);
-
         return $this;
     }
 
@@ -312,14 +361,10 @@ class ApiRouterController extends RequestAbstract
      * @param string $callback1 #Middleware/Optional
      * @param string $callback2 #Controller/Mandatory
      */
-    public function put(string $route = "", string $callback1 = "", string $callback2 = "")
+    public function put(string $route = "", string $callback1 = "", string $callback2 = ""): object
     {
-        if (!$route) {
-            die("Route Error !");
-        }
-
+        $this->preventWrongRoute($route);
         $this->routerRunner("PUT", $route, $callback1, $callback2);
-
         return $this;
     }
 
@@ -329,14 +374,10 @@ class ApiRouterController extends RequestAbstract
      * @param string $callback1 #Middleware/Optional
      * @param string $callback2 #Controller/Mandatory
      */
-    public function delete(string $route = "", string $callback1 = "", string $callback2 = "")
+    public function delete(string $route = "", string $callback1 = "", string $callback2 = ""): object
     {
-        if (!$route) {
-            die("Route Error !");
-        }
-
+        $this->preventWrongRoute($route);
         $this->routerRunner("DELETE", $route, $callback1, $callback2);
-
         return $this;
     }
 
@@ -346,14 +387,10 @@ class ApiRouterController extends RequestAbstract
      * @param string $callback1 #Middleware/Optional
      * @param string $callback2 #Controller/Mandatory
      */
-    public function patch(string $route = "", string $callback1 = "", string $callback2 = "")
+    public function patch(string $route = "", string $callback1 = "", string $callback2 = ""): object
     {
-        if (!$route) {
-            die("Route Error !");
-        }
-
+        $this->preventWrongRoute($route);
         $this->routerRunner("PATCH", $route, $callback1, $callback2);
-
         return $this;
     }
 

@@ -19,6 +19,7 @@
     "autoload": {
         "psr-4": {
             "PhpHunter\\": "src/",
+            "PhpHunter\\Configuration\\": "../../../app/Configuration/",
             "PhpHunter\\Abstractions\\": "src/Abstractors/",
             "PhpHunter\\Controllers\\": "src/Controllers/",
             "PhpHunter\\Middlewares\\": "src/Middlewares/",
