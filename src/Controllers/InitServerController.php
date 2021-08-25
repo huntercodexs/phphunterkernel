@@ -1,6 +1,6 @@
 <?php
 
-namespace PhpHunter\Controllers;
+namespace PhpHunter\Kernel\Controllers;
 
 class InitServerController
 {

@@ -1,9 +1,9 @@
 <?php
 
-namespace PhpHunter\Controllers;
+namespace PhpHunter\Kernel\Controllers;
 
-use PhpHunter\Abstractions\RequestAbstract;
-use PhpHunter\Configuration\PhpHunterSetup;
+use PhpHunter\Kernel\Abstractions\RequestAbstract;
+use PhpHunter\Framework\App\Configuration\PhpHunterSetup;
 
 class ApiRouterController extends RequestAbstract
 {

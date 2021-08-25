@@ -1,8 +1,8 @@
 <?php
 
-namespace PhpHunter\Controllers;
+namespace PhpHunter\Kernel\Controllers;
 
-use PhpHunter\Abstractions\StatusCodeAbstract;
+use PhpHunter\Kernel\Abstractions\StatusCodeAbstract;
 
 class ResponseController extends StatusCodeAbstract
 {

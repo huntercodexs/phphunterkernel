@@ -18,17 +18,16 @@
     },
     "autoload": {
         "psr-4": {
-            "PhpHunter\\": "src/",
-            "PhpHunter\\Configuration\\": "../../../app/Configuration/",
-            "PhpHunter\\Abstractions\\": "src/Abstractors/",
-            "PhpHunter\\Controllers\\": "src/Controllers/",
-            "PhpHunter\\Middlewares\\": "src/Middlewares/",
-            "PhpHunter\\Models\\": "src/Models/",
-            "PhpHunter\\ORM\\": "src/ORM/",
-            "PhpHunter\\Security\\": "src/Security/",
-            "PhpHunter\\Services\\": "src/Services/",
-            "PhpHunter\\Utils\\": "src/Utils/",
-            "PhpHunter\\Views\\": "src/Views/"
+            "PhpHunter\\Kernel\\": "src/",
+            "PhpHunter\\Kernel\\ORM\\": "src/ORM/",
+            "PhpHunter\\Kernel\\Views\\": "src/Views/",
+            "PhpHunter\\Kernel\\Utils\\": "src/Utils/",
+            "PhpHunter\\Kernel\\Models\\": "src/Models/",
+            "PhpHunter\\Kernel\\Security\\": "src/Security/",
+            "PhpHunter\\Kernel\\Services\\": "src/Services/",
+            "PhpHunter\\Kernel\\Middlewares\\": "src/Middlewares/",
+            "PhpHunter\\Kernel\\Controllers\\": "src/Controllers/",
+            "PhpHunter\\Kernel\\Abstractions\\": "src/Abstractors/"
         }
     },
     "scripts": {

@@ -1,6 +1,6 @@
 <?php
 
-namespace PhpHunter\Abstractions;
+namespace PhpHunter\Kernel\Abstractions;
 
 abstract class ParametersAbstract extends StatusCodeAbstract
 {
