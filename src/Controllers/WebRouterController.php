@@ -17,7 +17,7 @@ class WebRouterController extends ParametersAbstract
     /**
      * @description Type of files accepted to webserver Apache/Nginx
     */
-    private const _WEBFILES_ = ['php', 'html', 'htm', 'phtml'];
+    private const _WEB_FILES_ = ['php', 'html', 'htm', 'phtml'];
 
     /**
      * @description Class Constructor
@@ -36,6 +36,8 @@ class WebRouterController extends ParametersAbstract
 
     /**
      * @description Web Set Absolute Location
+     * @param string $path_to #Mandatory
+     * @return object
      */
     public function setAbsoluteLocation(string $path_to = "/"): object
     {
@@ -55,6 +57,7 @@ class WebRouterController extends ParametersAbstract
 
     /**
      * @description Web Get Absolute Location
+     * @return string
      */
     public function getAbsoluteLocation(): string
     {
@@ -63,6 +66,8 @@ class WebRouterController extends ParametersAbstract
 
     /**
      * @description Web Set Relative Location
+     * @param string $path_to #Mandatory
+     * @return object
      */
     public function setRelativeLocation(string $path_to = "/"): object
     {
@@ -81,6 +86,7 @@ class WebRouterController extends ParametersAbstract
 
     /**
      * @description Web Get Relative Location
+     * @return string
      */
     public function getRelativeLocation(): string
     {
@@ -89,6 +95,8 @@ class WebRouterController extends ParametersAbstract
 
     /**
      * @description Web Set Absolute Location
+     * @param string $url #Mandatory
+     * @return object
      */
     public function setExternalLocation(string $url): object
     {
@@ -105,6 +113,7 @@ class WebRouterController extends ParametersAbstract
 
     /**
      * @description Web Get Absolute Location
+     * @return string
      */
     public function getExternalLocation(): string
     {
@@ -113,8 +122,9 @@ class WebRouterController extends ParametersAbstract
 
     /**
      * @description Web Redirect
+     * @return void
      */
-    public function redirect()
+    public function redirect(): void
     {
         if ($this->getExternalLocation() == "") {
 
@@ -122,7 +132,7 @@ class WebRouterController extends ParametersAbstract
 
             if (is_dir($internal_path)) {
 
-                if (FileTools::checkIfExistsFilesByType($internal_path, 'index', self::_WEBFILES_) == false) {
+                if (FileTools::checkIfExistsFilesByType($internal_path, 'index', self::_WEB_FILES_) == false) {
 
                     $error = "redirect Error, not found directory or file resource !";
                     DumperController::dumpError($error);
@@ -145,8 +155,10 @@ class WebRouterController extends ParametersAbstract
 
     /**
      * @description Web Redirect To
+     * @param string $location #Mandatory
+     * @return void
      */
-    public function redirectTo(string $location = "/")
+    public function redirectTo(string $location = "/"): void
     {
         $this->setLocation = $location;
 
@@ -161,7 +173,7 @@ class WebRouterController extends ParametersAbstract
 
             if (is_dir($internal_path)) {
 
-                if (FileTools::checkIfExistsFilesByType($internal_path, 'index', self::_WEBFILES_) == false) {
+                if (FileTools::checkIfExistsFilesByType($internal_path, 'index', self::_WEB_FILES_) == false) {
 
                     $error = "redirect Error, not found directory or file resource !";
                     DumperController::dumpError($error);
@@ -180,7 +192,11 @@ class WebRouterController extends ParametersAbstract
 
     }
 
-    private function doRedirect()
+    /**
+     * @description Do Redirect
+     * @return void
+     */
+    private function doRedirect(): void
     {
         header("HTTP/1.1 200 ".$this->getStatusMessage(200));
         header("Location: {$this->setLocation}");

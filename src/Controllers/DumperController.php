@@ -2,6 +2,8 @@
 
 namespace PhpHunter\Kernel\Controllers;
 
+use JetBrains\PhpStorm\NoReturn;
+
 class DumperController
 {
     /**
@@ -14,8 +16,9 @@ class DumperController
     /**
      * @description Dump Simple
      * @param string $data #Mandatory
+     * @return void
      */
-    public static function dump(string $data)
+    public static function dump(string $data): void
     {
         var_dump('<pre>', $data, '</pre>');
     }
@@ -23,8 +26,9 @@ class DumperController
     /**
      * @description DD Simple
      * @param string $data #Mandatory
+     * @return void
      */
-    public static function dd(string $data)
+    public static function dd(string $data): void
     {
         var_dump('<pre>', $data, '</pre>');
         die;
@@ -33,6 +37,7 @@ class DumperController
     /**
      * @description Dump Error
      * @param string $data #Mandatory
+     * @return void
      */
     public static function dumpError(string $data): void
     {
@@ -48,10 +53,11 @@ class DumperController
      * @description Smart Dump
      * @param string $data #Mandatory
      * @param bool $die #Optional
+     * @return void
      */
-    public static function smartDumper(string $data, bool $die = false)
+    public static function smartDumper(string $data, bool $die = false): void
     {
-        echo "smartDumper say: {$data}"."<br />";
+        echo "smartDumper say: {$data}<br />";
         if ($die) die;
     }
 

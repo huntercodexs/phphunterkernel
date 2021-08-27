@@ -2,7 +2,6 @@
 
 namespace PhpHunter\Kernel\Utils;
 
-use PhpHunter\Kernel\Controllers\DumperController;
 use PhpHunter\Kernel\Controllers\HunterCatcherController;
 
 class FileTools
@@ -26,6 +25,7 @@ class FileTools
      * @param string $path #Mandatory
      * @param string $filename #Mandatory
      * @param array $types #Mandatory
+     * @return bool
     */
     public static function checkIfExistsFilesByType(string $path, string $filename, array $types): bool
     {
@@ -43,8 +43,9 @@ class FileTools
     /**
      * @description Check Readable File
      * @param string $file #Mandatory
+     * @return void
      */
-    public static function checkReadableFile(string $file = "")
+    public static function checkReadableFile(string $file = ""): void
     {
         if (!is_readable($file) || !is_file($file) || !file_exists($file)) {
             HunterCatcherController::hunterCatcher("Unable to read file: {$file}", 500, true);

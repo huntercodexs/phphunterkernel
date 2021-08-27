@@ -20,8 +20,9 @@ class ResponseController extends StatusCodeAbstract
     /**
      * @description Set Content Type
      * @param string $type #Mandatory
+     * @return void
      */
-    public function setContentType($type)
+    public function setContentType(string $type): void
     {
         $this->contentType = $type;
     }
@@ -29,18 +30,20 @@ class ResponseController extends StatusCodeAbstract
     /**
      * @description Set Status Code
      * @param int $code #Mandatory
+     * @return void
      */
-    public function setStatusCode($code)
+    public function setStatusCode(int $code): void
     {
         $this->code = $code;
     }
 
     /**
      * @description Json Response
-     * @param array $data #Mandatory
+     * @param array|string $data #Mandatory
      * @param int $status_code #Mandatory
+     * @return void
      */
-    public function jsonResponse($data, $status_code)
+    public function jsonResponse(array|string $data, int $status_code): void
     {
         $this->setStatusCode($status_code);
         $this->setHeaders();
@@ -54,8 +57,9 @@ class ResponseController extends StatusCodeAbstract
 
     /**
      * @description Set Headers
+     * @return void
      */
-    private function setHeaders()
+    private function setHeaders(): void
     {
         header("HTTP/1.1 " . $this->code . " " . $this->getStatusMessage($this->code));
         header("Content-Type:" . $this->contentType);

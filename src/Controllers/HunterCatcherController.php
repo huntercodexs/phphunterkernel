@@ -4,7 +4,6 @@ namespace PhpHunter\Kernel\Controllers;
 
 use Exception;
 use Throwable;
-use PhpHunter\Kernel\Controllers\SetupController;
 
 class HunterCatcherController extends \Exception
 {
@@ -18,8 +17,9 @@ class HunterCatcherController extends \Exception
      * @param array $data #Mandatory
      * @param int $code #Mandatory
      * @param bool $die #Optional
+     * @return void
      */
-    public static function hunterApiCatcher(array $data, int $code = 500, bool $die = false)
+    public static function hunterApiCatcher(array $data, int $code = 500, bool $die = false): void
     {
         $env_config = new SetupController();
         $appConfig = $env_config->getEnvConfigurationSetup();
@@ -39,8 +39,9 @@ class HunterCatcherController extends \Exception
      * @param string $data #Mandatory
      * @param int $code #Mandatory
      * @param bool $die #Optional
+     * @return void
      */
-    public static function hunterCatcher(string $data, int $code = 500, bool $die = false)
+    public static function hunterCatcher(string $data, int $code = 500, bool $die = false): void
     {
         HunterCatcherController::treatCatcher($data, $code);
         if ($die) die;
@@ -49,6 +50,7 @@ class HunterCatcherController extends \Exception
     /**
      * @description Extract Trace
      * @param array $data #Mandatory
+     * @return array
      */
     protected static function extractTrace(array $data = []): array
     {
@@ -71,8 +73,9 @@ class HunterCatcherController extends \Exception
      * @description Treat Catcher
      * @param string $data #Mandatory
      * @param int $code #Mandatory
+     * @return void
      */
-    private static function treatCatcher(string $data, int $code)
+    private static function treatCatcher(string $data, int $code): void
     {
         $css = './vendor/huntercodexs/phphunterkernel/src/Assets/css/phphunterkernel.css';
         $html = './vendor/huntercodexs/phphunterkernel/src/Assets/templates/catcher.hunter.html';

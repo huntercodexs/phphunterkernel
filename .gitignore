@@ -1,5 +1,8 @@
 /vendor/
 .idea/
+/old/
+/tmp/
+/tests/
 *.log
 *.exe
 *.zip

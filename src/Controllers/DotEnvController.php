@@ -63,8 +63,9 @@ class DotEnvController extends ParametersAbstract
     /**
      * @description Load Env Cached
      * @param string $location #Mandatory
+     * @return void
      */
-    public static function loadEnvCached(string $location)
+    public static function loadEnvCached(string $location): void
     {
         $get_root_path = new DotEnvController($location);
 
@@ -101,8 +102,9 @@ class DotEnvController extends ParametersAbstract
     /**
      * @description Get Env Cached
      * @param string $env_name #Mandatory
+     * @return string
      */
-    public static function getEnvCached($env_name)
+    public static function getEnvCached(string $env_name): string
     {
         return getenv($env_name);
     }
@@ -111,8 +113,9 @@ class DotEnvController extends ParametersAbstract
      * @description Get Env
      * @param string $location #Mandatory
      * @param string $var_name #Mandatory
+     * @return string
      */
-    public static function getEnv(string $location, string $var_name)
+    public static function getEnv(string $location, string $var_name): string
     {
         $get_root_path = new DotEnvController($location);
 
@@ -145,8 +148,9 @@ class DotEnvController extends ParametersAbstract
     /**
      * @description DEBUG Env
      * @param string $location #Mandatory
+     * @return void
     */
-    public static function debugEnv(string $location)
+    public static function debugEnv(string $location): void
     {
         $get_root_path = new DotEnvController($location);
 

@@ -35,8 +35,9 @@ abstract class ParametersAbstract extends StatusCodeAbstract
 
     /**
      * @description Init Params
+     * @return void
      */
-    protected function initParams()
+    protected function initParams(): void
     {
         $this->requestHeaders = apache_request_headers();
         $this->requestMethod = strtoupper($_SERVER['REQUEST_METHOD']);
@@ -58,11 +59,10 @@ abstract class ParametersAbstract extends StatusCodeAbstract
         $this->title = $this->requestParams['title'] ?? "";
         $this->completed = $this->requestParams['completed'] ?? "";
         $this->token = $this->requestParams['token'] ?? "";
-        $this->token = $this->requestParams['state'] ?? "";
-        $this->schedule = $this->schedule['schedule'] ?? "";
+        $this->state = $this->requestParams['state'] ?? "";
+        $this->schedule = $this->requestParams['schedule'] ?? "";
 
         $this->requestParams = array_merge($this->requestParams, [
-            "requestMethod" => $this->requestMethod,
             "requestMethod" => $this->requestMethod,
             "requestUri" => $this->requestUri,
             "rootPath" => $this->rootPath,
@@ -84,8 +84,9 @@ abstract class ParametersAbstract extends StatusCodeAbstract
     /**
      * @description Prepare Parameters
      * @param string $uri #Mandatory
+     * @return void
      */
-    private function prepareParameters(string $uri): array
+    private function prepareParameters(string $uri): void
     {
         $params = [];
 
@@ -95,7 +96,8 @@ abstract class ParametersAbstract extends StatusCodeAbstract
         preg_match('/(\?.*)/', $uri, $source, PREG_OFFSET_CAPTURE);
 
         if ($_SERVER['CONTENT_LENGTH'] == 0 && count($source) == 0) {
-            return $params;
+            $this->initParams = $params;
+            return;
         }
 
         switch (strtoupper($this->requestMethod)) {
@@ -124,51 +126,47 @@ abstract class ParametersAbstract extends StatusCodeAbstract
             $params = array_merge($params, $this->paramsExtractor($source));
         }
 
-        return $this->initParams = $params;
+        $this->initParams = $params;
     }
 
     /**
      * @description Get Params By Content Type
+     * @return array
      */
     private function getParamsByContentType(): array
     {
-        $params = [];
+        if (!$this->contentType) {
+            return [];
+        }
 
         if ($this->requestMethod == "POST") {
 
-            switch ($this->contentType) {
-
-                case "application/json":
-                    $params = json_decode(
-                        file_get_contents(
-                            'php://input',
-                            false,
-                            null,
-                            0,
-                            $_SERVER['CONTENT_LENGTH']),
-                        true);
-                    break;
-
-                default:
-                    $params = $_POST;
-            }
+            $params = match ($this->contentType) {
+                "application/json" => json_decode(
+                    file_get_contents(
+                        'php://input',
+                        false,
+                        null,
+                        0,
+                        $_SERVER['CONTENT_LENGTH']),
+                    true),
+                default => $_POST,
+            };
 
         } else {
 
-            switch ($this->contentType) {
+            $params = match ($this->contentType) {
 
-                case "application/json":
-                    $params = json_decode(
-                        file_get_contents(
-                            'php://input',
-                            false,
-                            null,
-                            0,
-                            $_SERVER['CONTENT_LENGTH']),
-                        true);
-                    break;
+                "application/json" => json_decode(
+                    file_get_contents(
+                        'php://input',
+                        false,
+                        null,
+                        0,
+                        $_SERVER['CONTENT_LENGTH']),
+                    true),
 
-                case "application/x-www-form-urlencoded":
+                "application/x-www-form-urlencoded" => (function() {
                     parse_str(
                         file_get_contents(
                             'php://input',
@@ -177,12 +175,11 @@ abstract class ParametersAbstract extends StatusCodeAbstract
                             0,
                             $_SERVER['CONTENT_LENGTH']),
                         $params);
-                    break;
+                    return $params;
+                }),
 
-                case "multipart/form-data":
-                    $params = $this->paramsExtractor($this->multipartFormDataExtractor());
-                    break;
-            }
+                "multipart/form-data" => $this->paramsExtractor($this->multipartFormDataExtractor())
+            };
 
         }
 
@@ -192,18 +189,16 @@ abstract class ParametersAbstract extends StatusCodeAbstract
 
     /**
      * @description Params Extractor
+     * @param string|array $source
+     * @return array
      */
-    private function paramsExtractor($source): array
+    private function paramsExtractor(string|array $source): array
     {
         $extracted = [];
         $generic_source = is_array($source) ? $source[0][0] : $source;
         $source_extract = explode("&", preg_replace('/^\?/', '', $generic_source));
 
         for ($i = 0; $i < count($source_extract); $i++) {
-
-            if ($i == count($source_extract)) {
-                break;
-            }
 
             $get_param = explode("=", $source_extract[$i]);
 
@@ -217,6 +212,7 @@ abstract class ParametersAbstract extends StatusCodeAbstract
 
     /**
      * @description Multipart Form Data Extractor
+     * @return string
      */
     private function multipartFormDataExtractor(): string
     {
@@ -233,9 +229,7 @@ abstract class ParametersAbstract extends StatusCodeAbstract
         $params = preg_replace('/name="/', '', $params);
         $params = preg_replace('/";;/', '=', $params);
         $params = preg_replace('/;;/', '&', $params);
-        $params = preg_replace('/;|--/', '', $params);
-
-        return $params;
+        return preg_replace('/;|--/', '', $params);
     }
 
     //------------------------------------------------------------------------------------------------
@@ -245,14 +239,16 @@ abstract class ParametersAbstract extends StatusCodeAbstract
     /**
      * @description Set Params
      * @param array $params #Mandatory
+     * @return void
      */
-    protected function setParams(array $params)
+    protected function setParams(array $params): void
     {
         $this->params = $params;
     }
 
     /**
      * @description Get Params
+     * @return array
      */
     protected function getParams(): array
     {
@@ -263,8 +259,9 @@ abstract class ParametersAbstract extends StatusCodeAbstract
      * @description Set Param
      * @param string $param #Mandatory
      * @param string $value #Mandatory
+     * @return void
      */
-    protected function setParam(string $param, string $value)
+    protected function setParam(string $param, string $value): void
     {
         $this->params[$param] = $value;
     }
@@ -272,6 +269,7 @@ abstract class ParametersAbstract extends StatusCodeAbstract
     /**
      * @description Get Param
      * @param string $param #Mandatory
+     * @return string
      */
     protected function getParam(string $param): string
     {
@@ -312,27 +310,27 @@ abstract class ParametersAbstract extends StatusCodeAbstract
         return $this->rootPath;
     }
 
-    protected function getAction():string
+    protected function getAction(): string
     {
         return $this->action;
     }
 
-    protected function getTask():string
+    protected function getTask(): string
     {
         return $this->task;
     }
 
-    protected function getTitle():string
+    protected function getTitle(): string
     {
         return $this->title;
     }
 
-    protected function getCompleted():string
+    protected function getCompleted(): string
     {
         return $this->completed;
     }
 
-    protected function getToken():string
+    protected function getToken(): string
     {
         return $this->token;
     }

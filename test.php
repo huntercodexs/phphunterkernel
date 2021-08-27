@@ -2,6 +2,6 @@
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-use PhpHunter\PhpHunterKernelTest;
+use PhpHunter\Kernel\PhpHunterKernelTest;
 
 new PhpHunterKernelTest();

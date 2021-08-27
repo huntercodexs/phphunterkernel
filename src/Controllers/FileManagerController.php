@@ -1,13 +1,13 @@
 <?php
 
-namespace Atlas\Controllers;
+namespace PhpHunter\Kernel\Controllers;
 
-class FileManagerController extends AndyController
+class FileManagerController
 {
-    private $acceptedFiles;
-    private $acceptedFileSize;
-    private $file;
-    private $pathToSave;
+    private array $file;
+    private array $acceptedFiles;
+    private string $pathToSave;
+    private int $acceptedFileSize;
 
     public function __construct()
     {

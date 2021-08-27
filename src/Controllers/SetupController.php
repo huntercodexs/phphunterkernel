@@ -27,7 +27,7 @@ class SetupController
         $this->rootDir = $_SERVER['DOCUMENT_ROOT'];
 
         /**
-         * Conector betewen Framework and Kernel, do not change this !
+         * Conector between Framework and Kernel, do not change this !
          */
         $this->namespaceConfiguration = "PhpHunter\\Framework\\App\\Configuration\\";
 
@@ -44,6 +44,7 @@ class SetupController
     /**
      * @description Return Configuration
      * @param string $config #Mandatory
+     * @return string
      */
     private function returnConfiguration(string $config): string
     {
@@ -52,6 +53,7 @@ class SetupController
 
     /**
      * @description Get Env Configuration Setup
+     * @return string
      */
     public function getEnvConfigurationSetup(): string
     {
@@ -60,6 +62,7 @@ class SetupController
 
     /**
      * @description Get App Configuration Setup
+     * @return string
      */
     public function getAppConfigurationSetup(): string
     {
@@ -68,6 +71,7 @@ class SetupController
 
     /**
      * @description Get Api Configuration Setup
+     * @return string
      */
     public function getApiConfigurationSetup(): string
     {
@@ -84,6 +88,7 @@ class SetupController
 
     /**
      * @description Get Models Configuration Setup
+     * @return string
      */
     public function getModelsConfigurationSetup(): string
     {
@@ -92,6 +97,7 @@ class SetupController
 
     /**
      * @description Get Views Configuration Setup
+     * @return string
      */
     public function getViewsConfigurationSetup(): string
     {
@@ -100,6 +106,7 @@ class SetupController
 
     /**
      * @description Get Controllers Configuration Setup
+     * @return string
      */
     public function getControllersConfigurationSetup(): string
     {
@@ -108,6 +115,7 @@ class SetupController
 
     /**
      * @description Get Services Configuration Setup
+     * @return string
      */
     public function getServicesConfigurationSetup(): string
     {
@@ -116,6 +124,7 @@ class SetupController
 
     /**
      * @description Get Templates Configuration Setup
+     * @return string
      */
     public function getTemplatesConfigurationSetup(): string
     {

@@ -11,6 +11,7 @@ class GenericTools extends DumperController
      * @param string $filename #Mandatory
      * @param string $data #Mandatory
      * @param bool $append #Mandatory
+     * @return bool
     */
     public static function localLogger(string $filename, string $data, bool $append = true): bool
     {
@@ -71,7 +72,7 @@ class GenericTools extends DumperController
      * @param string $separator #Optional
      * @return array
      */
-    public static function toArray(string $str, string $separator = ",")
+    public static function toArray(string $str, string $separator = ","): array
     {
         $a = array();
 

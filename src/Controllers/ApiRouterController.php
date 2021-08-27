@@ -2,9 +2,9 @@
 
 namespace PhpHunter\Kernel\Controllers;
 
-use PhpHunter\Kernel\Abstractions\RequestAbstract;
+use PhpHunter\Kernel\Abstractions\ParametersAbstract;
 
-class ApiRouterController extends RequestAbstract
+class ApiRouterController extends ParametersAbstract
 {
     /**
      * @description Namespace
@@ -47,7 +47,6 @@ class ApiRouterController extends RequestAbstract
 
     /**
      * @description Constructor Class
-     * @throws HunterCatcherController
      */
     public function __construct()
     {
@@ -66,7 +65,8 @@ class ApiRouterController extends RequestAbstract
 
     /**
      * @description API Convert RegExp
-     * @param string $data #RoutePath/Mandatory
+     * @param string $data #Route-Path/Mandatory
+     * @return string
      */
     protected function regExpConvert(string $data): string
     {
@@ -83,7 +83,8 @@ class ApiRouterController extends RequestAbstract
     /**
      * @description API Controller Arguments
      * @param array $args #Args/Mandatory
-     * @param strng $route #RouteValue/Mandatory
+     * @param string $route #Route-Path/Mandatory
+     * @return void
      */
     protected function setControllerArgsFromUri(array $args, string $route): void
     {
@@ -103,8 +104,11 @@ class ApiRouterController extends RequestAbstract
 
     /**
      * @description API Set Router Details
+     * @param string $verb #Http-Method|Mandatory
+     * @param string $route #Route-Path|Mandatory
+     * @return void
      */
-    protected function setRouterDetails($verb, $route): void
+    protected function setRouterDetails(string $verb, string $route): void
     {
         $this->routeVerb = $verb;
         $this->routeRoute = $route;
@@ -113,6 +117,7 @@ class ApiRouterController extends RequestAbstract
 
     /**
      * @description API Get Router Details
+     * @return array
      */
     protected function getRouterDetails(): array
     {
@@ -125,6 +130,7 @@ class ApiRouterController extends RequestAbstract
 
     /**
      * @description API Show Router Details
+     * @return object
      */
     protected function showRouterDetails(): object
     {
@@ -141,6 +147,7 @@ class ApiRouterController extends RequestAbstract
      * @description API Route Matcher
      * @param string $verb #Http-Method/Mandatory
      * @param string $route #RoutePath/Mandatory
+     * @return void
      */
     protected function routeMatcher(string $verb, string $route): void
     {
@@ -160,6 +167,7 @@ class ApiRouterController extends RequestAbstract
 
     /**
      * @description API Reset Settings
+     * @return void
      */
     protected function resetSettings(): void
     {
@@ -177,8 +185,9 @@ class ApiRouterController extends RequestAbstract
      * @description API Setup Run
      * @param string $callback1 #Middleware/Optional
      * @param string $callback2 #Controller/Mandatory
+     * @return void
      */
-    protected function runSetup(string $callback1 = "", string $callback2 = "")
+    protected function runSetup(string $callback1 = "", string $callback2 = ""): void
     {
         $middleware = "";
         $controller = "";
@@ -230,6 +239,7 @@ class ApiRouterController extends RequestAbstract
 
     /**
      * @description API Run
+     * @return void
     */
     protected function run(): void
     {
@@ -299,6 +309,7 @@ class ApiRouterController extends RequestAbstract
 
     /**
      * @description API Exception
+     * @return void
      */
     protected function exception(): void
     {
@@ -315,8 +326,9 @@ class ApiRouterController extends RequestAbstract
      * @param string $route #RoutePath/Mandatory
      * @param string $callback1 #Middleware/Optional
      * @param string $callback2 #Controller/Mandatory
+     * @return void
      */
-    protected function routerRunner(string $verb, string $route, string $callback1 = "", string $callback2 = "")
+    protected function routerRunner(string $verb, string $route, string $callback1 = "", string $callback2 = ""): void
     {
         $this->routeMatcher($verb, $route);
         if ($this->routeFound) {
@@ -327,6 +339,7 @@ class ApiRouterController extends RequestAbstract
     /**
      * @description API Check Request Method
      * @param string $method #Mandatory
+     * @return void
      */
     protected function checkRequestMethod(string $method): void
     {
@@ -342,8 +355,9 @@ class ApiRouterController extends RequestAbstract
     /**
      * @description Prevent Wrong Route
      * @param string $route #Mandatory
+     * @return void
      */
-    protected function preventWrongRoute(string $route)
+    protected function preventWrongRoute(string $route): void
     {
         if (!$route) {
             HunterCatcherController::hunterApiCatcher(
@@ -356,6 +370,7 @@ class ApiRouterController extends RequestAbstract
 
     /**
      * @description Configuration Setup
+     * @return void
      */
     public function configurationSetup(): void
     {
@@ -385,6 +400,7 @@ class ApiRouterController extends RequestAbstract
 
     /**
      * @description Check Request Type
+     * @return void
      */
     private function checkRequestType(): void
     {
@@ -403,8 +419,10 @@ class ApiRouterController extends RequestAbstract
 
     /**
      * @description Check Send File
+     * @param array $resource #Mandatory
+     * @return bool
      */
-    private function checkSendFile($resource): bool
+    private function checkSendFile(array $resource): bool
     {
         /*Requisição para enviar arquivo*/
         if ($resource['service'] == "atlas/FileManager" && $resource['action'] == "send") {
@@ -430,6 +448,7 @@ class ApiRouterController extends RequestAbstract
      * @param string $route #RoutePath/Mandatory
      * @param string $callback1 #Middleware/Optional
      * @param string $callback2 #Controller/Mandatory
+     * @return object
     */
     protected function get(string $route = "", string $callback1 = "", string $callback2 = ""): object
     {
@@ -443,6 +462,7 @@ class ApiRouterController extends RequestAbstract
      * @param string $route #RoutePath/Mandatory
      * @param string $callback1 #Middleware/Optional
      * @param string $callback2 #Controller/Mandatory
+     * @return object
      */
     protected function post(string $route = "", string $callback1 = "", string $callback2 = ""): object
     {
@@ -456,6 +476,7 @@ class ApiRouterController extends RequestAbstract
      * @param string $route #RoutePath/Mandatory
      * @param string $callback1 #Middleware/Optional
      * @param string $callback2 #Controller/Mandatory
+     * @return object
      */
     protected function put(string $route = "", string $callback1 = "", string $callback2 = ""): object
     {
@@ -469,6 +490,7 @@ class ApiRouterController extends RequestAbstract
      * @param string $route #RoutePath/Mandatory
      * @param string $callback1 #Middleware/Optional
      * @param string $callback2 #Controller/Mandatory
+     * @return object
      */
     protected function delete(string $route = "", string $callback1 = "", string $callback2 = ""): object
     {
@@ -482,6 +504,7 @@ class ApiRouterController extends RequestAbstract
      * @param string $route #RoutePath/Mandatory
      * @param string $callback1 #Middleware/Optional
      * @param string $callback2 #Controller/Mandatory
+     * @return object
      */
     protected function patch(string $route = "", string $callback1 = "", string $callback2 = ""): object
     {

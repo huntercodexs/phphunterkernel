@@ -51,8 +51,9 @@ abstract class StatusCodeAbstract
     /**
      * @description Get Status Message
      * @param int $code #Mandatory
+     * @return string
      */
-    protected function getStatusMessage($code): string
+    protected function getStatusMessage(int $code): string
     {
         $response = "";
 
