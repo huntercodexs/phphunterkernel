@@ -1,9 +1,9 @@
 <?php
 
-namespace PhpHunter\Controllers;
+namespace PhpHunter\Kernel\Controllers;
 
-use PhpHunter\Utils\FileTools;
-use PhpHunter\Abstractions\ParametersAbstract;
+use PhpHunter\Kernel\Utils\FileTools;
+use PhpHunter\Kernel\Abstractions\ParametersAbstract;
 
 class WebRouterController extends ParametersAbstract
 {

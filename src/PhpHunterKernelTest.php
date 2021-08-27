@@ -1,6 +1,6 @@
 <?php
 
-namespace PhpHunter;
+namespace PhpHunter\Kernel;
 
 class PhpHunterKernelTest
 {

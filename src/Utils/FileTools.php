@@ -1,9 +1,9 @@
 <?php
 
-namespace PhpHunter\Utils;
+namespace PhpHunter\Kernel\Utils;
 
-use PhpHunter\Controllers\DumperController;
-use PhpHunter\Controllers\HunterCatcherController;
+use PhpHunter\Kernel\Controllers\DumperController;
+use PhpHunter\Kernel\Controllers\HunterCatcherController;
 
 class FileTools
 {

@@ -1,9 +1,10 @@
 <?php
 
-namespace PhpHunter\Controllers;
+namespace PhpHunter\Kernel\Controllers;
 
 use Exception;
 use Throwable;
+use PhpHunter\Kernel\Controllers\SetupController;
 
 class HunterCatcherController extends \Exception
 {
@@ -20,9 +21,16 @@ class HunterCatcherController extends \Exception
      */
     public static function hunterApiCatcher(array $data, int $code = 500, bool $die = false)
     {
+        $env_config = new SetupController();
+        $appConfig = $env_config->getEnvConfigurationSetup();
+
         $response = new ResponseController();
-        $response->setStatusCode($code);
-        $response->jsonResponse($data);
+
+        if ($appConfig()['debug'] == true) {
+            $response->jsonResponse($data, $code);
+        } else {
+            $response->jsonResponse([], $code);
+        }
         if ($die) die;
     }
 

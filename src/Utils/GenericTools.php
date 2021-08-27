@@ -1,8 +1,8 @@
 <?php
 
-namespace PhpHunter\Utils;
+namespace PhpHunter\Kernel\Utils;
 
-use PhpHunter\Controllers\DumperController;
+use PhpHunter\Kernel\Controllers\DumperController;
 
 class GenericTools extends DumperController
 {

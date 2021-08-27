@@ -1,48 +1,49 @@
 <?php
 
-namespace PhpHunter\Controllers;
+namespace PhpHunter\Kernel\Controllers;
 
-use PhpHunter\Abstractions\RequestAbstract;
-use PhpHunter\Configuration\PhpHunterSetup;
+use PhpHunter\Kernel\Abstractions\RequestAbstract;
 
 class ApiRouterController extends RequestAbstract
 {
     /**
      * @description Namespace
     */
-    private string $middlewareNamespace;
-    private string $controllerNamespace;
+    protected string $middlewareNamespace;
+    protected string $controllerNamespace;
 
     /**
      * @description When Middleware is set
      */
-    private string $middlewareClass;
-    private string $methodMiddleware;
-    private string $staticMiddleware;
+    protected string $middlewareClass;
+    protected string $methodMiddleware;
+    protected string $staticMiddleware;
 
     /**
      * @description When Controller is set
      */
-    private string $controllerClass;
-    private string $methodController;
-    private string $staticController;
+    protected string $controllerClass;
+    protected string $methodController;
+    protected string $staticController;
+    protected string $staticClass;
+    protected string $staticMethod;
 
     /**
      * @description Route Found
     */
-    private bool $routeFound = false;
+    protected bool $routeFound = false;
 
     /**
      * @description Route Details
     */
-    private string $routeRoute;
-    private string $routeUri;
-    private string $routeVerb;
+    protected string $routeRoute;
+    protected string $routeUri;
+    protected string $routeVerb;
 
     /**
      * @description Controller Arguments
      */
-    private string $controllerArgs = "";
+    protected array $controllerArgsFromUri = [];
 
     /**
      * @description Constructor Class
@@ -52,7 +53,7 @@ class ApiRouterController extends RequestAbstract
     {
         $this->configurationSetup();
         $this->resetSettings();
-        $this->setParams();
+        $this->initParams();
     }
 
     /**
@@ -64,39 +65,10 @@ class ApiRouterController extends RequestAbstract
     }
 
     /**
-     * @description API Reset Settings
-     * @throws HunterCatcherController
-     */
-    private function configurationSetup(): void
-    {
-        $app_config = new SetupController();
-        if (!file_exists($app_config->getAppConfigurationSetup())) {
-            throw new HunterCatcherController(
-                'Missing Configuration File PhpHunter Setup',
-                500
-            );
-        }
-
-        require_once $app_config->getAppConfigurationSetup();
-
-        //TODO: Melhorar a lógica do trecho de código abaixo
-        try {
-            $this->middlewareNamespace = PhpHunterSetup::getConfig()['namespace']['middlewares'];
-            $this->controllerNamespace = PhpHunterSetup::getConfig()['namespace']['controllers'];
-        } catch (\Exception $e) {
-            HunterCatcherController::hunterApiCatcher(
-                ['error' => 'Configuration Error to PhpHunter Setup, '.$e->getMessage()],
-                500,
-                true
-            );
-        }
-    }
-
-    /**
      * @description API Convert RegExp
      * @param string $data #RoutePath/Mandatory
      */
-    private function regExpConvert(string $data): string
+    protected function regExpConvert(string $data): string
     {
         $convert = str_replace('/', '\/', $data);
         $convert = preg_replace('/{(.*):number}/', '([0-9]+)', $convert);
@@ -104,28 +76,35 @@ class ApiRouterController extends RequestAbstract
         $convert = preg_replace('/{(.*):alpha}/', '([0-9a-zA-Z_]+)', $convert);
         $convert = preg_replace('/{(.*):alpha2}/', '([0-9a-zA-Z_\-]+)', $convert);
         $convert = preg_replace('/{(.*):email}/', '([a-zA-Z0-9\.\_\-]+@[a-zA-Z0-9\.\_\-]+.[a-zA-Z]{2,4})', $convert);
+        $convert = preg_replace('/{(.*):query_string}/', '(\?.*)', $convert);
         return preg_replace('/{(.*):symbol}/', '([^0-9a-zA-Z]+)', $convert);
     }
 
     /**
      * @description API Controller Arguments
+     * @param array $args #Args/Mandatory
+     * @param strng $route #RouteValue/Mandatory
      */
-    private function setControllerArgs(array $args): void
+    protected function setControllerArgsFromUri(array $args, string $route): void
     {
-        $controllerArgs = [];
+        $pattern = '/[{]([0-9a-zA-Z_]+):(number|string|alpha[2]?|email|query_string|symbol)[}]/';
+        preg_match_all($pattern, $route, $args_name_from_route, PREG_OFFSET_CAPTURE);
+
+        $args_from_uri = [];
+
         /*Has parameters*/
         if (count($args) > 1) {
             for ($p = 1; $p < count($args); $p++) {
-                $controllerArgs[] = $args[$p][0];
+                $args_from_uri[$args_name_from_route[1][$p-1][0]] = $args[$p][0];
             }
-            $this->controllerArgs = implode(",", $controllerArgs);
+            $this->controllerArgsFromUri = $args_from_uri;
         }
     }
 
     /**
-     * @description API Router Details
+     * @description API Set Router Details
      */
-    private function setRouterDetails($verb, $route): void
+    protected function setRouterDetails($verb, $route): void
     {
         $this->routeVerb = $verb;
         $this->routeRoute = $route;
@@ -135,7 +114,7 @@ class ApiRouterController extends RequestAbstract
     /**
      * @description API Get Router Details
      */
-    private function getRouterDetails(): array
+    protected function getRouterDetails(): array
     {
         return [
             "HTTP-METHOD" => $this->routeVerb,
@@ -147,7 +126,7 @@ class ApiRouterController extends RequestAbstract
     /**
      * @description API Show Router Details
      */
-    public function showRouterDetails(): object
+    protected function showRouterDetails(): object
     {
         DumperController::dump((string)[
             "HTTP-METHOD" => $this->routeVerb,
@@ -163,7 +142,7 @@ class ApiRouterController extends RequestAbstract
      * @param string $verb #Http-Method/Mandatory
      * @param string $route #RoutePath/Mandatory
      */
-    private function routeMatcher(string $verb, string $route): void
+    protected function routeMatcher(string $verb, string $route): void
     {
         $route_reg_exp = $this->regExpConvert($route);
         $uri = $this->getRequestUri();
@@ -171,24 +150,27 @@ class ApiRouterController extends RequestAbstract
         if (!preg_match("/^{$route_reg_exp}$/", $uri, $m, PREG_OFFSET_CAPTURE)) {
             $this->routeFound = false;
         } else {
+            $this->checkRequestType();
             $this->checkRequestMethod($verb);
-            $this->routeFound = true;
-            $this->setControllerArgs($m);
+            $this->setControllerArgsFromUri($m, $route);
             $this->setRouterDetails($verb, $route);
+            $this->routeFound = true;
         }
     }
 
     /**
      * @description API Reset Settings
      */
-    private function resetSettings(): void
+    protected function resetSettings(): void
     {
         $this->middlewareClass = "";
         $this->staticMiddleware = "";
         $this->controllerClass = "";
-        $this->staticController= "";
+        $this->staticClass = "";
+        $this->staticMethod = "";
+        $this->staticController = "";
         $this->routeFound = false;
-        $this->controllerArgs = "";
+        $this->controllerArgsFromUri = [];
     }
 
     /**
@@ -196,7 +178,7 @@ class ApiRouterController extends RequestAbstract
      * @param string $callback1 #Middleware/Optional
      * @param string $callback2 #Controller/Mandatory
      */
-    private function runSetup(string $callback1 = "", string $callback2 = "")
+    protected function runSetup(string $callback1 = "", string $callback2 = "")
     {
         $middleware = "";
         $controller = "";
@@ -239,14 +221,17 @@ class ApiRouterController extends RequestAbstract
 
         /*Controller: Static methods*/
         if (preg_match('/::/', $controller, $m)) {
-            $this->staticController = $this->controllerNamespace . $controller;
+            $exp = explode("::", $controller);
+            $this->staticClass = $exp[0];
+            $this->staticMethod = $exp[1];
+            $this->staticController = $this->controllerNamespace . $this->staticClass;
         }
     }
 
     /**
      * @description API Run
     */
-    public function run(): void
+    protected function run(): void
     {
         if ($this->routeFound) {
 
@@ -258,12 +243,52 @@ class ApiRouterController extends RequestAbstract
                 "{$this->staticMiddleware}"();
             }
 
+            /*MergeParams - to Static and Instancef Controllers*/
+            $params_merge = array_merge($this->controllerArgsFromUri, $this->initParams);
+
             /*Controller*/
             if ($this->controllerClass != "") {
+
+                /*InstanceOf*/
                 $instanceOfController = new $this->controllerClass();
-                $instanceOfController->{$this->methodController}($this->controllerArgs);
+
+                /*Has setParams in Controller - this is mandatory*/
+                if (!method_exists($instanceOfController, 'setParams')) {
+                    HunterCatcherController::hunterApiCatcher(
+                        ["error" => "Missing setParams in {$this->controllerClass}"],
+                        500,
+                        true
+                    );
+                }
+                /*SetParams*/
+                $instanceOfController->setParams($params_merge);
+
+                /*Has method in Controller - this is mandatory*/
+                if (!method_exists($instanceOfController, $this->methodController)) {
+                    HunterCatcherController::hunterApiCatcher(
+                        ["error" => "Missing {$this->methodController} in {$this->controllerClass}"],
+                        500,
+                        true
+                    );
+                }
+
+                /*Controller Method Call*/
+                $instanceOfController->{$this->methodController}();
+
             } elseif ($this->staticController != "") {
-                "{$this->staticController}"($this->controllerArgs);
+                /*Static*/
+
+                /*Has static method in Controller - this is mandatory*/
+                if (!method_exists($this->staticController, $this->staticMethod)) {
+                    HunterCatcherController::hunterApiCatcher(
+                        ["error" => "Missing {$this->staticMethod} in {$this->staticController}"],
+                        500,
+                        true
+                    );
+                }
+
+                //Example: ControllerName::methodName(params=[]);
+                "{$this->staticController}::{$this->staticMethod}"($params_merge);
             }
 
             exit();
@@ -275,7 +300,7 @@ class ApiRouterController extends RequestAbstract
     /**
      * @description API Exception
      */
-    public function exception(): void
+    protected function exception(): void
     {
         HunterCatcherController::hunterApiCatcher(
             ["exception" => "Route Not Found !"],
@@ -291,7 +316,7 @@ class ApiRouterController extends RequestAbstract
      * @param string $callback1 #Middleware/Optional
      * @param string $callback2 #Controller/Mandatory
      */
-    private function routerRunner(string $verb, string $route, string $callback1 = "", string $callback2 = "")
+    protected function routerRunner(string $verb, string $route, string $callback1 = "", string $callback2 = "")
     {
         $this->routeMatcher($verb, $route);
         if ($this->routeFound) {
@@ -303,7 +328,7 @@ class ApiRouterController extends RequestAbstract
      * @description API Check Request Method
      * @param string $method #Mandatory
      */
-    private function checkRequestMethod(string $method)
+    protected function checkRequestMethod(string $method): void
     {
         if ($this->requestMethod != $method) {
             HunterCatcherController::hunterApiCatcher(
@@ -318,7 +343,7 @@ class ApiRouterController extends RequestAbstract
      * @description Prevent Wrong Route
      * @param string $route #Mandatory
      */
-    private function preventWrongRoute(string $route)
+    protected function preventWrongRoute(string $route)
     {
         if (!$route) {
             HunterCatcherController::hunterApiCatcher(
@@ -330,12 +355,83 @@ class ApiRouterController extends RequestAbstract
     }
 
     /**
+     * @description Configuration Setup
+     */
+    public function configurationSetup(): void
+    {
+        $app_config = new SetupController();
+        $appConfig = $app_config->getAppConfigurationSetup();
+
+        if (isset($appConfig()['namespace']['middlewares']) && $appConfig()['namespace']['middlewares'] != "") {
+            $this->middlewareNamespace = $appConfig()['namespace']['middlewares'];
+        } else {
+            HunterCatcherController::hunterApiCatcher(
+                ['error' => 'Configuration Error to PhpHunterApiPlug:middlewares'],
+                500,
+                true
+            );
+        }
+
+        if (isset($appConfig()['namespace']['controllers']) && $appConfig()['namespace']['controllers'] != "") {
+            $this->controllerNamespace = $appConfig()['namespace']['controllers'];
+        } else {
+            HunterCatcherController::hunterApiCatcher(
+                ['error' => 'Configuration Error to PhpHunterApiPlug:controllers'],
+                500,
+                true
+            );
+        }
+    }
+
+    /**
+     * @description Check Request Type
+     */
+    private function checkRequestType(): void
+    {
+        $api_config = new SetupController();
+        $apiConfig = $api_config->getApiConfigurationSetup();
+        $accepted_content = $apiConfig()['accepted_content'];
+
+        if (!in_array($this->contentType, $accepted_content[strtoupper($this->requestMethod)])) {
+            HunterCatcherController::hunterApiCatcher(
+                ["error" => "Not Acceptable !"],
+                406,
+                true
+            );
+        }
+    }
+
+    /**
+     * @description Check Send File
+     */
+    private function checkSendFile($resource): bool
+    {
+        /*Requisição para enviar arquivo*/
+        if ($resource['service'] == "atlas/FileManager" && $resource['action'] == "send") {
+            if ($resource['type'] != "POST" || $resource['content'] != "multipart/form-data") {
+                return false;
+            }
+            $check_file = new FileManagerController();
+            if (!$check_file->validateFile()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    
+    //------------------------------------------------------------------------------------------------
+    // REST/HTTP/METHOD
+    // GET|POST|PUT|DELETE|PATCH
+    //------------------------------------------------------------------------------------------------
+
+    /**
      * @methods [GET]
      * @param string $route #RoutePath/Mandatory
      * @param string $callback1 #Middleware/Optional
      * @param string $callback2 #Controller/Mandatory
     */
-    public function get(string $route = "", string $callback1 = "", string $callback2 = ""): object
+    protected function get(string $route = "", string $callback1 = "", string $callback2 = ""): object
     {
         $this->preventWrongRoute($route);
         $this->routerRunner("GET", $route, $callback1, $callback2);
@@ -348,7 +444,7 @@ class ApiRouterController extends RequestAbstract
      * @param string $callback1 #Middleware/Optional
      * @param string $callback2 #Controller/Mandatory
      */
-    public function post(string $route = "", string $callback1 = "", string $callback2 = ""): object
+    protected function post(string $route = "", string $callback1 = "", string $callback2 = ""): object
     {
         $this->preventWrongRoute($route);
         $this->routerRunner("POST", $route, $callback1, $callback2);
@@ -361,7 +457,7 @@ class ApiRouterController extends RequestAbstract
      * @param string $callback1 #Middleware/Optional
      * @param string $callback2 #Controller/Mandatory
      */
-    public function put(string $route = "", string $callback1 = "", string $callback2 = ""): object
+    protected function put(string $route = "", string $callback1 = "", string $callback2 = ""): object
     {
         $this->preventWrongRoute($route);
         $this->routerRunner("PUT", $route, $callback1, $callback2);
@@ -374,7 +470,7 @@ class ApiRouterController extends RequestAbstract
      * @param string $callback1 #Middleware/Optional
      * @param string $callback2 #Controller/Mandatory
      */
-    public function delete(string $route = "", string $callback1 = "", string $callback2 = ""): object
+    protected function delete(string $route = "", string $callback1 = "", string $callback2 = ""): object
     {
         $this->preventWrongRoute($route);
         $this->routerRunner("DELETE", $route, $callback1, $callback2);
@@ -387,7 +483,7 @@ class ApiRouterController extends RequestAbstract
      * @param string $callback1 #Middleware/Optional
      * @param string $callback2 #Controller/Mandatory
      */
-    public function patch(string $route = "", string $callback1 = "", string $callback2 = ""): object
+    protected function patch(string $route = "", string $callback1 = "", string $callback2 = ""): object
     {
         $this->preventWrongRoute($route);
         $this->routerRunner("PATCH", $route, $callback1, $callback2);

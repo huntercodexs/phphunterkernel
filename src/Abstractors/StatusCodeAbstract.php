@@ -1,6 +1,6 @@
 <?php
 
-namespace PhpHunter\Abstractions;
+namespace PhpHunter\Kernel\Abstractions;
 
 abstract class StatusCodeAbstract
 {
@@ -48,6 +48,10 @@ abstract class StatusCodeAbstract
             505 => 'HTTP Version Not Supported'
         ];
 
+    /**
+     * @description Get Status Message
+     * @param int $code #Mandatory
+     */
     protected function getStatusMessage($code): string
     {
         $response = "";
