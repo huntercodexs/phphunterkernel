@@ -119,6 +119,14 @@ class SetupController
      */
     public function getServicesConfigurationSetup(): string
     {
+        $cfg_file = "{$this->rootDir}/app/Configuration/{$this->servicesConfigurationSetup}.php";
+        if (!file_exists($cfg_file)) {
+            HunterCatcherController::hunterApiCatcher(
+                ['error' => 'Missing Configuration File '.$this->servicesConfigurationSetup],
+                500,
+                true
+            );
+        }
         return $this->returnConfiguration($this->servicesConfigurationSetup);
     }
 

@@ -11,6 +11,7 @@ class ApiRouterController extends ParametersAbstract
     */
     protected string $middlewareNamespace;
     protected string $controllerNamespace;
+    protected string $serviceNamespace;
 
     /**
      * @description When Middleware is set
@@ -61,6 +62,62 @@ class ApiRouterController extends ParametersAbstract
     public function __destruct()
     {
         $this->resetSettings();
+    }
+
+    /**
+     * @description Configuration Setup
+     * @return void
+     */
+    public function configurationSetup(): void
+    {
+        $app_config = new SetupController();
+        $appConfig = $app_config->getAppConfigurationSetup();
+
+        if (isset($appConfig()['namespace']['middlewares']) && $appConfig()['namespace']['middlewares'] != "") {
+            $this->middlewareNamespace = $appConfig()['namespace']['middlewares'];
+        } else {
+            HunterCatcherController::hunterApiCatcher(
+                ['error' => 'Configuration Error to PhpHunterApiPlug:middlewares'],
+                500,
+                true
+            );
+        }
+
+        if (isset($appConfig()['namespace']['controllers']) && $appConfig()['namespace']['controllers'] != "") {
+            $this->controllerNamespace = $appConfig()['namespace']['controllers'];
+        } else {
+            HunterCatcherController::hunterApiCatcher(
+                ['error' => 'Configuration Error to PhpHunterApiPlug:controllers'],
+                500,
+                true
+            );
+        }
+
+        if (isset($appConfig()['namespace']['services']) && $appConfig()['namespace']['services'] != "") {
+            $this->serviceNamespace = $appConfig()['namespace']['services'];
+        } else {
+            HunterCatcherController::hunterApiCatcher(
+                ['error' => 'Configuration Error to PhpHunterApiPlug:services'],
+                500,
+                true
+            );
+        }
+    }
+
+    /**
+     * @description API Reset Settings
+     * @return void
+     */
+    protected function resetSettings(): void
+    {
+        $this->middlewareClass = "";
+        $this->staticMiddleware = "";
+        $this->controllerClass = "";
+        $this->staticClass = "";
+        $this->staticMethod = "";
+        $this->staticController = "";
+        $this->routeFound = false;
+        $this->controllerArgsFromUri = [];
     }
 
     /**
@@ -144,6 +201,134 @@ class ApiRouterController extends ParametersAbstract
     }
 
     /**
+     * @description API Check Request Method
+     * @param string $method #Mandatory
+     * @return bool
+     */
+    protected function checkRequestMethod(string $method): bool
+    {
+        /*if ($this->requestMethod != $method) {
+            HunterCatcherController::hunterApiCatcher(
+                ["error" => "HTTP Method Not Allowed !"],
+                405,
+                true
+            );
+        }*/
+        if ($this->requestMethod == $method) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @description Check Request Type
+     * @return void
+     */
+    private function checkRequestType(): void
+    {
+        $api_config = new SetupController();
+        $apiConfig = $api_config->getApiConfigurationSetup();
+        $accepted_content = $apiConfig()['accepted_content'];
+
+        if (!in_array($this->contentType, $accepted_content[strtoupper($this->requestMethod)])) {
+            HunterCatcherController::hunterApiCatcher(
+                ["error" => "HTTP-Method/Content-Type Not Allowed !"],
+                405,
+                true
+            );
+        }
+    }
+
+    /**
+     * @description Is Service
+     * @param string $route #Mandatory
+     * @param string $type #Optional
+     * @return bool
+     */
+    private function isService(string $route, string $type = ""): bool
+    {
+        if (preg_match("/^\/api\/service\/{$type}/", $route, $m, PREG_OFFSET_CAPTURE)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @description Is Service
+     * @return bool
+     */
+    private function isFileSend(): bool
+    {
+        if (count($this->files) > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @description Check Send File
+     * @return void
+     */
+    private function checkSendFile(): void
+    {
+        if (!$this->isFileSend() || $this->requestMethod != "POST" || $this->contentType != "multipart/form-data") {
+            HunterCatcherController::hunterApiCatcher(
+                ["error" => "Not Acceptable !"],
+                406,
+                true
+            );
+        }
+
+        $file_manager = new FileManagerController($this->files);
+
+        if (!$file_manager->validateFile()) {
+            HunterCatcherController::hunterApiCatcher(
+                ["error" => "Not Acceptable !"],
+                406,
+                true
+            );
+        }
+
+        if ($file_manager->send()) {
+            die("ENVIADO");
+        } else {
+            die("NAO ENVIADO");
+        }
+    }
+
+    /**
+     * @description Prevent Wrong Route
+     * @param string $route #Mandatory
+     * @return void
+     */
+    protected function preventWrongRoute(string $route): void
+    {
+        if (!$route) {
+            HunterCatcherController::hunterApiCatcher(
+                ["error" => "Missing Configuration Route"],
+                500,
+                true
+            );
+        }
+    }
+
+    /**
+     * @description API Router Runner
+     * @param string $verb #Http-Method/Mandatory
+     * @param string $route #RoutePath/Mandatory
+     * @param string $callback1 #Middleware/Optional
+     * @param string $callback2 #Controller/Mandatory
+     * @return void
+     */
+    protected function routerRunner(string $verb, string $route, string $callback1 = "", string $callback2 = ""): void
+    {
+        $this->routeMatcher($verb, $route);
+        if ($this->routeFound) {
+            $this->runSetup($callback1, $callback2);
+        }
+    }
+
+    /**
      * @description API Route Matcher
      * @param string $verb #Http-Method/Mandatory
      * @param string $route #RoutePath/Mandatory
@@ -151,34 +336,30 @@ class ApiRouterController extends ParametersAbstract
      */
     protected function routeMatcher(string $verb, string $route): void
     {
-        $route_reg_exp = $this->regExpConvert($route);
-        $uri = $this->getRequestUri();
-
-        if (!preg_match("/^{$route_reg_exp}$/", $uri, $m, PREG_OFFSET_CAPTURE)) {
-            $this->routeFound = false;
-        } else {
-            $this->checkRequestType();
-            $this->checkRequestMethod($verb);
-            $this->setControllerArgsFromUri($m, $route);
-            $this->setRouterDetails($verb, $route);
-            $this->routeFound = true;
-        }
-    }
-
-    /**
-     * @description API Reset Settings
-     * @return void
-     */
-    protected function resetSettings(): void
-    {
-        $this->middlewareClass = "";
-        $this->staticMiddleware = "";
-        $this->controllerClass = "";
-        $this->staticClass = "";
-        $this->staticMethod = "";
-        $this->staticController = "";
         $this->routeFound = false;
-        $this->controllerArgsFromUri = [];
+        $uri = $this->getRequestUri();
+        $route_reg_exp = $this->regExpConvert($route);
+
+        //Route Found
+        if (preg_match("/^{$route_reg_exp}$/", $uri, $m, PREG_OFFSET_CAPTURE)) {
+
+            //Cconfirm Http-Method
+            if ($this->checkRequestMethod($verb)) {
+
+                if ($this->isService($route, "file")) {
+                    $this->checkSendFile();
+                } elseif ($this->isService($route)) {
+                    //TODO: Code Here...
+                }
+
+                $this->checkRequestType();
+                $this->paramsMapper();
+                $this->setControllerArgsFromUri($m, $route);
+                $this->setRouterDetails($verb, $route);
+                $this->routeFound = true;
+
+            }
+        }
     }
 
     /**
@@ -240,7 +421,7 @@ class ApiRouterController extends ParametersAbstract
     /**
      * @description API Run
      * @return void
-    */
+     */
     protected function run(): void
     {
         if ($this->routeFound) {
@@ -320,124 +501,6 @@ class ApiRouterController extends ParametersAbstract
         );
     }
 
-    /**
-     * @description API Router Runner
-     * @param string $verb #Http-Method/Mandatory
-     * @param string $route #RoutePath/Mandatory
-     * @param string $callback1 #Middleware/Optional
-     * @param string $callback2 #Controller/Mandatory
-     * @return void
-     */
-    protected function routerRunner(string $verb, string $route, string $callback1 = "", string $callback2 = ""): void
-    {
-        $this->routeMatcher($verb, $route);
-        if ($this->routeFound) {
-            $this->runSetup($callback1, $callback2);
-        }
-    }
-
-    /**
-     * @description API Check Request Method
-     * @param string $method #Mandatory
-     * @return void
-     */
-    protected function checkRequestMethod(string $method): void
-    {
-        if ($this->requestMethod != $method) {
-            HunterCatcherController::hunterApiCatcher(
-                ["error" => "HTTP Method Not Allowed !"],
-                405,
-                true
-            );
-        }
-    }
-
-    /**
-     * @description Prevent Wrong Route
-     * @param string $route #Mandatory
-     * @return void
-     */
-    protected function preventWrongRoute(string $route): void
-    {
-        if (!$route) {
-            HunterCatcherController::hunterApiCatcher(
-                ["error" => "Missing Configuration Route"],
-                500,
-                true
-            );
-        }
-    }
-
-    /**
-     * @description Configuration Setup
-     * @return void
-     */
-    public function configurationSetup(): void
-    {
-        $app_config = new SetupController();
-        $appConfig = $app_config->getAppConfigurationSetup();
-
-        if (isset($appConfig()['namespace']['middlewares']) && $appConfig()['namespace']['middlewares'] != "") {
-            $this->middlewareNamespace = $appConfig()['namespace']['middlewares'];
-        } else {
-            HunterCatcherController::hunterApiCatcher(
-                ['error' => 'Configuration Error to PhpHunterApiPlug:middlewares'],
-                500,
-                true
-            );
-        }
-
-        if (isset($appConfig()['namespace']['controllers']) && $appConfig()['namespace']['controllers'] != "") {
-            $this->controllerNamespace = $appConfig()['namespace']['controllers'];
-        } else {
-            HunterCatcherController::hunterApiCatcher(
-                ['error' => 'Configuration Error to PhpHunterApiPlug:controllers'],
-                500,
-                true
-            );
-        }
-    }
-
-    /**
-     * @description Check Request Type
-     * @return void
-     */
-    private function checkRequestType(): void
-    {
-        $api_config = new SetupController();
-        $apiConfig = $api_config->getApiConfigurationSetup();
-        $accepted_content = $apiConfig()['accepted_content'];
-
-        if (!in_array($this->contentType, $accepted_content[strtoupper($this->requestMethod)])) {
-            HunterCatcherController::hunterApiCatcher(
-                ["error" => "Not Acceptable !"],
-                406,
-                true
-            );
-        }
-    }
-
-    /**
-     * @description Check Send File
-     * @param array $resource #Mandatory
-     * @return bool
-     */
-    private function checkSendFile(array $resource): bool
-    {
-        /*Requisição para enviar arquivo*/
-        if ($resource['service'] == "atlas/FileManager" && $resource['action'] == "send") {
-            if ($resource['type'] != "POST" || $resource['content'] != "multipart/form-data") {
-                return false;
-            }
-            $check_file = new FileManagerController();
-            if (!$check_file->validateFile()) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-    
     //------------------------------------------------------------------------------------------------
     // REST/HTTP/METHOD
     // GET|POST|PUT|DELETE|PATCH

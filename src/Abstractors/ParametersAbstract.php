@@ -14,6 +14,7 @@ abstract class ParametersAbstract extends StatusCodeAbstract
     protected array $requestParams;
     protected array $initParams;
     protected array $params;
+    protected array $files;
 
     protected string $id;
     protected string $email;
@@ -47,6 +48,16 @@ abstract class ParametersAbstract extends StatusCodeAbstract
         $this->schemeProtocol = $_SERVER['REQUEST_SCHEME'];
         $this->serverName = $_SERVER['SERVER_NAME'];
         $this->requestParams = $_REQUEST;
+        $this->params = [];
+        $this->files = [];
+
+        $this->requestParams = array_merge($this->requestParams, [
+            "requestMethod" => $this->requestMethod,
+            "requestUri" => $this->requestUri,
+            "rootPath" => $this->rootPath,
+            "schemeProtocol" => $this->schemeProtocol,
+            "serverName" => $this->serverName
+        ]);
 
         $this->id = $this->requestParams['id'] ?? "";
         $this->email = $this->requestParams['email'] ?? "";
@@ -62,14 +73,6 @@ abstract class ParametersAbstract extends StatusCodeAbstract
         $this->state = $this->requestParams['state'] ?? "";
         $this->schedule = $this->requestParams['schedule'] ?? "";
 
-        $this->requestParams = array_merge($this->requestParams, [
-            "requestMethod" => $this->requestMethod,
-            "requestUri" => $this->requestUri,
-            "rootPath" => $this->rootPath,
-            "schemeProtocol" => $this->schemeProtocol,
-            "serverName" => $this->serverName
-        ]);
-
         /**
          * When Content Type is multpart/form-data, then:
          * explode => multipart/form-data; boundary=--------------------------010101010101010101010101
@@ -77,10 +80,36 @@ abstract class ParametersAbstract extends StatusCodeAbstract
          */
         $c_type = explode(";", $this->contentType)[0];
         $this->contentType = $c_type ?? $this->contentType;
-        
+
+        $this->prepareFiles();
+    }
+
+    /**
+     * @description Prepare Files
+     * @return void
+     */
+    private function prepareFiles(): void
+    {
+        if (count($_FILES) > 0) {
+            $this->files = $_FILES;
+        } else {
+            $this->files = [];
+        }
+    }
+
+    //------------------------------------------------------------------------------------------------
+    // PARAMS MAPPER
+    //------------------------------------------------------------------------------------------------
+
+    /**
+     * @description Params Mapper
+     * @return void
+     */
+    protected function paramsMapper(): void
+    {
         $this->prepareParameters($this->requestUri);
     }
-    
+
     /**
      * @description Prepare Parameters
      * @param string $uri #Mandatory

@@ -7,17 +7,32 @@ class FileManagerController
     private array $file;
     private array $acceptedFiles;
     private string $pathToSave;
+    private string $prefix;
+    private int $chmod;
     private int $acceptedFileSize;
 
-    public function __construct()
+    /**
+     * @description Constructor Class
+    */
+    public function __construct(array $files)
     {
-        $this->file = $_FILES;
-        $this->acceptedFiles = ["gif", "png", "jpg", "jpeg", "pdf"];
-        $this->acceptedFileSize = 1024 * 1024 * 2; //2MB
-        $this->pathToSave = "file_manager/";
+        $api_service_config = new SetupController();
+        $ApiServiceConfig = $api_service_config->getServicesConfigurationSetup();
+        $upload_config = $ApiServiceConfig()['upload'];
+
+        $this->file = $files;
+        $this->acceptedFiles = $upload_config['accepted'];
+        $this->acceptedFileSize = $upload_config['maxsize'];
+        $this->pathToSave = $upload_config['dir'];
+        $this->chmod = $upload_config['chmod'];
+        $this->prefix = $upload_config['prefix'];
     }
 
-    public function checkAcceptFilesExtension(): bool
+    /**
+     * @description Check Accept Files Extension
+     * @return bool
+     */
+    private function checkAcceptFilesExtension(): bool
     {
         $checkin = explode(".", $this->file['filename']['name']);
         $extension = strtolower(end($checkin));
@@ -32,7 +47,11 @@ class FileManagerController
         return true;
     }
 
-    public function checkAcceptFilesSize($size): bool
+    /**
+     * @description Check Accept Files Size
+     * @return bool
+     */
+    private function checkAcceptFilesSize($size): bool
     {
         if ($size > $this->acceptedFileSize) {
             return false;
@@ -40,6 +59,10 @@ class FileManagerController
         return true;
     }
 
+    /**
+     * @description Validate File
+     * @return bool
+     */
     public function validateFile(): bool
     {
         if (!isset($this->file['filename'])) {
@@ -69,22 +92,20 @@ class FileManagerController
         return true;
     }
 
-    public function send()
+    /**
+     * @description Send
+     * @return bool
+     */
+    public function send(): bool
     {
-        $finalFileName = basename($this->file['filename']['name']);
+        $finalFileName = $this->prefix.basename($this->file['filename']['name']);
 
         if (move_uploaded_file($this->file['filename']['tmp_name'], $this->pathToSave . $finalFileName)) {
-
-            $this->returnCode = 200;
-            $this->returnData = ['message' => 'Arquivo enviado com sucesso'];
-
-        } else {
-
-            $this->returnCode = 500;
-            $this->returnData = ['error' => 'Internal Server Error'];
-
-            echo "Não foi possível enviar o arquivo, tente novamente";
-
+            if ($this->chmod != "" && is_numeric($this->chmod)) {
+                chmod($this->pathToSave . $finalFileName, $this->chmod);
+            }
+            return true;
         }
+        return false;
     }
 }
