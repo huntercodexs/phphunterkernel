@@ -90,7 +90,7 @@ abstract class ParametersAbstract extends StatusCodeAbstract
      */
     private function prepareFiles(): void
     {
-        if (count($_FILES) > 0) {
+        if (isset($_FILES['file']) && count($_FILES['file']) > 0) {
             $this->files = $_FILES;
         } else {
             $this->files = [];
@@ -298,9 +298,9 @@ abstract class ParametersAbstract extends StatusCodeAbstract
     /**
      * @description Get Param
      * @param string $param #Mandatory
-     * @return string
+     * @return array|string
      */
-    protected function getParam(string $param): string
+    protected function getParam(string $param): array|string
     {
         return $this->params[$param] ?? "";
     }

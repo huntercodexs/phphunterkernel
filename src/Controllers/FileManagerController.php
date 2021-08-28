@@ -2,30 +2,31 @@
 
 namespace PhpHunter\Kernel\Controllers;
 
-class FileManagerController
+use PhpHunter\Kernel\Abstractions\ParametersAbstract;
+
+class FileManagerController extends ParametersAbstract
 {
-    private array $file;
-    private array $acceptedFiles;
-    private string $pathToSave;
-    private string $prefix;
     private int $chmod;
     private int $acceptedFileSize;
+    private string $prefix;
+    private string $pathToSave;
+    private string $extensionFile;
+    private array $acceptedFiles;
 
     /**
      * @description Constructor Class
     */
-    public function __construct(array $files)
+    public function __construct()
     {
         $api_service_config = new SetupController();
         $ApiServiceConfig = $api_service_config->getServicesConfigurationSetup();
         $upload_config = $ApiServiceConfig()['upload'];
 
-        $this->file = $files;
-        $this->acceptedFiles = $upload_config['accepted'];
-        $this->acceptedFileSize = $upload_config['maxsize'];
-        $this->pathToSave = $upload_config['dir'];
-        $this->chmod = $upload_config['chmod'];
-        $this->prefix = $upload_config['prefix'];
+        $this->acceptedFiles = $upload_config['accepted'] ?? "";
+        $this->acceptedFileSize = $upload_config['maxsize'] ?? "";
+        $this->pathToSave = $upload_config['dir'] ?? "";
+        $this->chmod = $upload_config['chmod'] ?? "";
+        $this->prefix = $upload_config['prefix'] ?? "";
     }
 
     /**
@@ -34,13 +35,13 @@ class FileManagerController
      */
     private function checkAcceptFilesExtension(): bool
     {
-        $checkin = explode(".", $this->file['filename']['name']);
-        $extension = strtolower(end($checkin));
+        $checkin = explode(".", $this->files['file']['name']);
+        $this->extensionFile = strtolower(end($checkin));
 
         if (!is_array($checkin) || count($checkin) == 0) {
             return false;
         }
-        if (!in_array($extension, $this->acceptedFiles)) {
+        if (!in_array($this->extensionFile, $this->acceptedFiles)) {
             return false;
         }
 
@@ -56,6 +57,7 @@ class FileManagerController
         if ($size > $this->acceptedFileSize) {
             return false;
         }
+
         return true;
     }
 
@@ -63,32 +65,33 @@ class FileManagerController
      * @description Validate File
      * @return bool
      */
-    public function validateFile(): bool
+    protected function validateFile(): bool
     {
-        if (!isset($this->file['filename'])) {
+        if (!isset($this->files['file'])) {
             return false;
         }
-        if ($this->file['filename']['error'] != "0") {
+        if ($this->files['file']['error'] != "0") {
             return false;
         }
-        if ($this->file['filename']['name'] == "") {
+        if ($this->files['file']['name'] == "") {
             return false;
         }
-        if ($this->file['filename']['tmp_name'] == "") {
+        if ($this->files['file']['tmp_name'] == "") {
             return false;
         }
-        if ($this->file['filename']['type'] == "") {
+        if ($this->files['file']['type'] == "") {
             return false;
         }
-        if ($this->file['filename']['size'] == "") {
+        if ($this->files['file']['size'] == "") {
             return false;
         }
         if (!$this->checkAcceptFilesExtension()) {
             return false;
         }
-        if (!$this->checkAcceptFilesSize($this->file['filename']['size'])) {
+        if (!$this->checkAcceptFilesSize($this->files['file']['size'])) {
             return false;
         }
+
         return true;
     }
 
@@ -96,16 +99,20 @@ class FileManagerController
      * @description Send
      * @return bool
      */
-    public function send(): bool
+    protected function send(): bool
     {
-        $finalFileName = $this->prefix.basename($this->file['filename']['name']);
+        $finalFileName = $this->prefix.basename($this->files['file']['name']);
+        $finalFileName = str_replace(" ", "_", $finalFileName);
+        $finalFileName = preg_replace('/\.([a-zA-Z]{3,4})$/', '', $finalFileName);
+        $finalFileName = $finalFileName."_".date("YmdHis").".".$this->extensionFile;
 
-        if (move_uploaded_file($this->file['filename']['tmp_name'], $this->pathToSave . $finalFileName)) {
+        if (move_uploaded_file($this->files['file']['tmp_name'], $this->pathToSave . $finalFileName)) {
             if ($this->chmod != "" && is_numeric($this->chmod)) {
                 chmod($this->pathToSave . $finalFileName, $this->chmod);
             }
             return true;
         }
+
         return false;
     }
 }

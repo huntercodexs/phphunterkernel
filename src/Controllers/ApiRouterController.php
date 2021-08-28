@@ -21,13 +21,23 @@ class ApiRouterController extends ParametersAbstract
     protected string $staticMiddleware;
 
     /**
-     * @description When Controller is set
+     * @description When Controller or Service is set
      */
-    protected string $controllerClass;
-    protected string $methodController;
-    protected string $staticController;
+    protected string $classServiceOrController;
+    protected string $staticServiceOrController;
+    protected string $noStaticMethod;
     protected string $staticClass;
     protected string $staticMethod;
+
+    /**
+     * @description Define a mandatory method that service or controller should be has
+    */
+    protected string $firstApply = "setParams";
+
+    /**
+     * @description When Route is a service
+     */
+    protected bool $isRouteService = false;
 
     /**
      * @description Route Found
@@ -62,6 +72,15 @@ class ApiRouterController extends ParametersAbstract
     public function __destruct()
     {
         $this->resetSettings();
+    }
+
+    /**
+     * @description Set Mandatory Method
+     * @return void
+     */
+    public function setFirstApply(string $method): void
+    {
+        $this->firstApply = $method;
     }
 
     /**
@@ -112,11 +131,12 @@ class ApiRouterController extends ParametersAbstract
     {
         $this->middlewareClass = "";
         $this->staticMiddleware = "";
-        $this->controllerClass = "";
+        $this->classServiceOrController = "";
         $this->staticClass = "";
         $this->staticMethod = "";
-        $this->staticController = "";
+        $this->staticServiceOrController = "";
         $this->routeFound = false;
+        $this->isRouteService = false;
         $this->controllerArgsFromUri = [];
     }
 
@@ -207,6 +227,7 @@ class ApiRouterController extends ParametersAbstract
      */
     protected function checkRequestMethod(string $method): bool
     {
+        //TODO: Check code block bellow (if is needed or not)
         /*if ($this->requestMethod != $method) {
             HunterCatcherController::hunterApiCatcher(
                 ["error" => "HTTP Method Not Allowed !"],
@@ -248,8 +269,10 @@ class ApiRouterController extends ParametersAbstract
     private function isService(string $route, string $type = ""): bool
     {
         if (preg_match("/^\/api\/service\/{$type}/", $route, $m, PREG_OFFSET_CAPTURE)) {
+            $this->isRouteService = true;
             return true;
         }
+        $this->isRouteService = false;
         return false;
     }
 
@@ -273,26 +296,10 @@ class ApiRouterController extends ParametersAbstract
     {
         if (!$this->isFileSend() || $this->requestMethod != "POST" || $this->contentType != "multipart/form-data") {
             HunterCatcherController::hunterApiCatcher(
-                ["error" => "Not Acceptable !"],
+                ["error" => "File Service Not Acceptable !"],
                 406,
                 true
             );
-        }
-
-        $file_manager = new FileManagerController($this->files);
-
-        if (!$file_manager->validateFile()) {
-            HunterCatcherController::hunterApiCatcher(
-                ["error" => "Not Acceptable !"],
-                406,
-                true
-            );
-        }
-
-        if ($file_manager->send()) {
-            die("ENVIADO");
-        } else {
-            die("NAO ENVIADO");
         }
     }
 
@@ -303,7 +310,7 @@ class ApiRouterController extends ParametersAbstract
      */
     protected function preventWrongRoute(string $route): void
     {
-        if (!$route) {
+        if (!$route || $route == null) {
             HunterCatcherController::hunterApiCatcher(
                 ["error" => "Missing Configuration Route"],
                 500,
@@ -346,12 +353,21 @@ class ApiRouterController extends ParametersAbstract
             //Cconfirm Http-Method
             if ($this->checkRequestMethod($verb)) {
 
+                /**
+                 * When Service is a File-Service check if file send is OK
+                */
                 if ($this->isService($route, "file")) {
                     $this->checkSendFile();
-                } elseif ($this->isService($route)) {
-                    //TODO: Code Here...
                 }
 
+                /**
+                 * Again, if is a route to Service, just check it and set isRouteService = true
+                */
+                $this->isService($route);
+
+                /**
+                 * Now check all values and parameters of the Request
+                */
                 $this->checkRequestType();
                 $this->paramsMapper();
                 $this->setControllerArgsFromUri($m, $route);
@@ -371,23 +387,24 @@ class ApiRouterController extends ParametersAbstract
     protected function runSetup(string $callback1 = "", string $callback2 = ""): void
     {
         $middleware = "";
-        $controller = "";
+        $service_or_controller = "";
 
         if ($callback1 != "" && $callback2 != "") {
-            /*Middleware & Controller*/
+            /*Middleware & (Service Or Controller)*/
             $middleware = $callback1;
-            $controller = $callback2;
+            $service_or_controller = $callback2;
         } elseif ($callback1 != "" && $callback2 == "") {
-            /*Only Controller*/
-            $controller = $callback1;
+            /*Only Service Or Controller*/
+            $service_or_controller = $callback1;
         } else {
             HunterCatcherController::hunterApiCatcher(
-                ["error" => "Missing Middleware/Controller !"],
+                ["error" => "Missing Middleware/Service/Controller !"],
                 500,
                 true
             );
         }
 
+        /*Middleware is set*/
         if ($middleware != "") {
             /*Middleware: No static methods*/
             if (preg_match('/@/', $callback1, $m)) {
@@ -402,19 +419,27 @@ class ApiRouterController extends ParametersAbstract
             }
         }
 
-        /*Controller: No static methods*/
-        if (preg_match('/@/', $controller, $m)) {
-            $exp1 = explode('@', $controller);
-            $this->controllerClass = $this->controllerNamespace . $exp1[0];
-            $this->methodController = $exp1[1];
+        /*Service Or Controller is set (to instanceOf callback [@])*/
+        if (preg_match('/@/', $service_or_controller, $m)) {
+            $exp1 = explode('@', $service_or_controller);
+            if ($this->isRouteService) {
+                $this->classServiceOrController = $this->serviceNamespace . $exp1[0];
+            } else {
+                $this->classServiceOrController = $this->controllerNamespace . $exp1[0];
+            }
+            $this->noStaticMethod = $exp1[1];
         }
 
-        /*Controller: Static methods*/
-        if (preg_match('/::/', $controller, $m)) {
-            $exp = explode("::", $controller);
+        /*Service Or Controller is set (to Static callback [::])*/
+        if (preg_match('/::/', $service_or_controller, $m)) {
+            $exp = explode("::", $service_or_controller);
             $this->staticClass = $exp[0];
             $this->staticMethod = $exp[1];
-            $this->staticController = $this->controllerNamespace . $this->staticClass;
+            if ($this->isRouteService) {
+                $this->staticServiceOrController = $this->serviceNamespace . $this->staticClass;
+            } else {
+                $this->staticServiceOrController = $this->controllerNamespace . $this->staticClass;
+            }
         }
     }
 
@@ -426,7 +451,10 @@ class ApiRouterController extends ParametersAbstract
     {
         if ($this->routeFound) {
 
-            /*Middleware*/
+            /**
+             * Middleware
+             */
+
             if ($this->middlewareClass != "") {
                 $instanceOfMiddleware = new $this->middlewareClass();
                 $instanceOfMiddleware->{$this->methodMiddleware}();
@@ -434,52 +462,64 @@ class ApiRouterController extends ParametersAbstract
                 "{$this->staticMiddleware}"();
             }
 
-            /*MergeParams - to Static and Instancef Controllers*/
-            $params_merge = array_merge($this->controllerArgsFromUri, $this->initParams);
+            /*MergeParams - to Static and InstanceOf Services Or Controllers*/
+            $params_merge = array_merge($this->controllerArgsFromUri, $this->initParams, $this->files);
 
-            /*Controller*/
-            if ($this->controllerClass != "") {
+            /**
+             * Service Or Controller
+            */
 
-                /*InstanceOf*/
-                $instanceOfController = new $this->controllerClass();
+            if ($this->classServiceOrController != "") {
 
-                /*Has setParams in Controller - this is mandatory*/
-                if (!method_exists($instanceOfController, 'setParams')) {
-                    HunterCatcherController::hunterApiCatcher(
-                        ["error" => "Missing setParams in {$this->controllerClass}"],
-                        500,
-                        true
-                    );
+                /*InstanceOf: Service Or Controller*/
+
+                $instanceOfServiceOrController = new $this->classServiceOrController();
+
+                /**
+                 * Has {firstApply} in Controller - this is mandatory !
+                 * This value can be replaced by $app->setFirstApply('newMethodName')
+                 * in the InstanceOf Class, the default value is setParams
+                 */
+                if ($this->firstApply != "") {
+                    if (!method_exists($instanceOfServiceOrController, $this->firstApply)) {
+                        HunterCatcherController::hunterApiCatcher(
+                            ["error" => "Missing {$this->firstApply} in {$this->classServiceOrController}"],
+                            500,
+                            true
+                        );
+                    }
+
+                    /*firstApply: Mandatory for all Services Or Controllers*/
+                    $instanceOfServiceOrController->{$this->firstApply}($params_merge);
                 }
-                /*SetParams*/
-                $instanceOfController->setParams($params_merge);
 
                 /*Has method in Controller - this is mandatory*/
-                if (!method_exists($instanceOfController, $this->methodController)) {
+                if (!method_exists($instanceOfServiceOrController, $this->noStaticMethod)) {
                     HunterCatcherController::hunterApiCatcher(
-                        ["error" => "Missing {$this->methodController} in {$this->controllerClass}"],
+                        ["error" => "Missing {$this->noStaticMethod} in {$this->classServiceOrController}"],
                         500,
                         true
                     );
                 }
 
                 /*Controller Method Call*/
-                $instanceOfController->{$this->methodController}();
+                $instanceOfServiceOrController->{$this->noStaticMethod}();
 
-            } elseif ($this->staticController != "") {
-                /*Static*/
+            } elseif ($this->staticServiceOrController != "") {
+
+                /*Static: Service Or Controller*/
 
                 /*Has static method in Controller - this is mandatory*/
-                if (!method_exists($this->staticController, $this->staticMethod)) {
+                if (!method_exists($this->staticServiceOrController, $this->staticMethod)) {
                     HunterCatcherController::hunterApiCatcher(
-                        ["error" => "Missing {$this->staticMethod} in {$this->staticController}"],
+                        ["error" => "Missing {$this->staticMethod} in {$this->staticServiceOrController}"],
                         500,
                         true
                     );
                 }
 
                 //Example: ControllerName::methodName(params=[]);
-                "{$this->staticController}::{$this->staticMethod}"($params_merge);
+                "{$this->staticServiceOrController}::{$this->staticMethod}"($params_merge);
             }
 
             exit();

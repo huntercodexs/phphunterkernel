@@ -56,6 +56,18 @@ class ResponseController extends StatusCodeAbstract
     }
 
     /**
+     * @description Api Response
+     * @param array|string $data #Mandatory
+     * @param int $status_code #Mandatory
+     * @return void
+     */
+    public static function apiResponse(array|string $data, int $status_code): void
+    {
+        $response = new ResponseController();
+        $response->jsonResponse($data, $status_code);
+    }
+
+    /**
      * @description Set Headers
      * @return void
      */
