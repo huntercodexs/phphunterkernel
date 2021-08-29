@@ -21,8 +21,8 @@ class HunterCatcherController extends \Exception
      */
     public static function hunterApiCatcher(array $data, int $code = 500, bool $die = false): void
     {
-        $env_config = new SetupController();
-        $appConfig = $env_config->getEnvConfigurationSetup();
+        $env_config = new SettingsController();
+        $appConfig = $env_config->getEnvSettings();
 
         $response = new ResponseController();
 

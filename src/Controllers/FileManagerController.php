@@ -18,8 +18,8 @@ class FileManagerController extends ParametersAbstract
     */
     public function __construct()
     {
-        $api_service_config = new SetupController();
-        $ApiServiceConfig = $api_service_config->getServicesConfigurationSetup();
+        $api_service_config = new SettingsController();
+        $ApiServiceConfig = $api_service_config->getServicesSettings();
         $upload_config = $ApiServiceConfig()['upload'];
 
         $this->acceptedFiles = $upload_config['accepted'] ?? "";

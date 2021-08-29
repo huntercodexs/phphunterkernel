@@ -164,6 +164,8 @@ abstract class ParametersAbstract extends StatusCodeAbstract
      */
     private function getParamsByContentType(): array
     {
+        $params = [];
+
         if (!$this->contentType) {
             return [];
         }
@@ -184,18 +186,20 @@ abstract class ParametersAbstract extends StatusCodeAbstract
 
         } else {
 
-            $params = match ($this->contentType) {
+            switch ($this->contentType) {
 
-                "application/json" => json_decode(
-                    file_get_contents(
-                        'php://input',
-                        false,
-                        null,
-                        0,
-                        $_SERVER['CONTENT_LENGTH']),
-                    true),
+                case "application/json":
+                    $params = json_decode(
+                        file_get_contents(
+                            'php://input',
+                            false,
+                            null,
+                            0,
+                            $_SERVER['CONTENT_LENGTH']),
+                        true);
+                    break;
 
-                "application/x-www-form-urlencoded" => (function() {
+                case "application/x-www-form-urlencoded":
                     parse_str(
                         file_get_contents(
                             'php://input',
@@ -204,11 +208,13 @@ abstract class ParametersAbstract extends StatusCodeAbstract
                             0,
                             $_SERVER['CONTENT_LENGTH']),
                         $params);
-                    return $params;
-                }),
+                    break;
 
-                "multipart/form-data" => $this->paramsExtractor($this->multipartFormDataExtractor())
-            };
+                case "multipart/form-data":
+                    $params = $this->paramsExtractor($this->multipartFormDataExtractor());
+                    break;
+
+            }
 
         }
 

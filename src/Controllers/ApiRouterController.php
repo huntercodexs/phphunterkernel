@@ -89,8 +89,8 @@ class ApiRouterController extends ParametersAbstract
      */
     public function configurationSetup(): void
     {
-        $app_config = new SetupController();
-        $appConfig = $app_config->getAppConfigurationSetup();
+        $app_config = new SettingsController();
+        $appConfig = $app_config->getAppSettings();
 
         if (isset($appConfig()['namespace']['middlewares']) && $appConfig()['namespace']['middlewares'] != "") {
             $this->middlewareNamespace = $appConfig()['namespace']['middlewares'];
@@ -247,8 +247,8 @@ class ApiRouterController extends ParametersAbstract
      */
     private function checkRequestType(): void
     {
-        $api_config = new SetupController();
-        $apiConfig = $api_config->getApiConfigurationSetup();
+        $api_config = new SettingsController();
+        $apiConfig = $api_config->getApiSettings();
         $accepted_content = $apiConfig()['accepted_content'];
 
         if (!in_array($this->contentType, $accepted_content[strtoupper($this->requestMethod)])) {
