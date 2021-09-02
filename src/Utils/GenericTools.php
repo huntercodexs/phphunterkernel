@@ -7,6 +7,19 @@ use PhpHunter\Kernel\Controllers\DumperController;
 class GenericTools extends DumperController
 {
     /**
+     * Constructor Class
+     */
+    public function __construct()
+    {
+    }
+    /**
+     * Destructor Class
+     */
+    public function __destruct()
+    {
+    }
+
+    /**
      * @description Local Logger
      * @param string $filename #Mandatory
      * @param string $data #Mandatory
@@ -86,6 +99,21 @@ class GenericTools extends DumperController
         }
 
         return $a;
+    }
+
+    /**
+     * @description String Repeat
+     * @param string $data #Mandatory
+     * @param string $str #Mandatory
+     * @return string
+     */
+    public static function stringRepeat(string $data, string $str): string
+    {
+        $str_repeat = "";
+        for ($i = 0; $i < strlen($data); $i++) {
+            $str_repeat .= "$str";
+        }
+        return $str_repeat;
     }
 
 }
