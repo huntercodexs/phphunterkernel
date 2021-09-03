@@ -12,17 +12,13 @@
  *          ]
  *      ]
  * ]
- *
- * TODO: Code refactor and oprimize to array digger
- * TODO: arraySanitize
- * TODO: arrayValueHidden
- * WORK: arrayValueMask
  * */
 
 namespace PhpHunter\Kernel\Utils;
 
 use PhpHunter\Kernel\Utils\GenericTools;
 use PhpHunter\Kernel\Controllers\DumperController;
+use PhpHunter\Kernel\Controllers\HunterCatcherController;
 
 class ArrayHandler extends DumperController
 {
@@ -30,6 +26,10 @@ class ArrayHandler extends DumperController
      * Allow debug process
      */
     private bool $arrayProcDebug = false;
+    /**
+     * Define operation type to handler an array: hidden, mask, only
+     */
+    private string $arrayOperation = "mask";
 
     /**
      * When is need search any key into arrayData
@@ -50,6 +50,7 @@ class ArrayHandler extends DumperController
      * Create a local copy of arrayData to handler process
     */
     private array $arrayLocal = [];
+    private array $arrayLocalCopy = [];
 
     /**
      * Constructor Class
@@ -214,8 +215,15 @@ class ArrayHandler extends DumperController
                 }
 
                 $this->arrayLocal[$k0] = $v0;
+
                 if ($this->checkInArray($k0)) {
-                    $this->arrayLocal[$k0] = GenericTools::stringRepeat($v0, "*");
+                    if ($this->arrayOperation == 'mask') {
+                        $this->arrayLocal[$k0] = GenericTools::stringRepeat($v0, "*");
+                    } elseif ($this->arrayOperation == 'hidden') {
+                        unset($this->arrayLocal[$k0]);
+                    } elseif ($this->arrayOperation == 'only') {
+                        $this->arrayLocalCopy[$k0] = $v0;
+                    }
                 }
             }
         }
@@ -250,8 +258,15 @@ class ArrayHandler extends DumperController
                 }
 
                 $this->arrayLocal[$k0[0]][$k1] = $v1;
+
                 if ($this->checkInArray($k1)) {
-                    $this->arrayLocal[$k0[0]][$k1] = GenericTools::stringRepeat($v1, "*");
+                    if ($this->arrayOperation == 'mask') {
+                        $this->arrayLocal[$k0[0]][$k1] = GenericTools::stringRepeat($v1, "*");
+                    } elseif ($this->arrayOperation == 'hidden') {
+                        unset($this->arrayLocal[$k0[0]][$k1]);
+                    } elseif ($this->arrayOperation == 'only') {
+                        $this->arrayLocalCopy[$k0[0]][$k1] = $v1;
+                    }
                 }
             }
         }
@@ -286,8 +301,15 @@ class ArrayHandler extends DumperController
                 }
 
                 $this->arrayLocal[$k1[0]][$k1[1]][$k2] = $v2;
+
                 if ($this->checkInArray($k2)) {
-                    $this->arrayLocal[$k1[0]][$k1[1]][$k2] = GenericTools::stringRepeat($v2, "*");
+                    if ($this->arrayOperation == 'mask') {
+                        $this->arrayLocal[$k1[0]][$k1[1]][$k2] = GenericTools::stringRepeat($v2, "*");
+                    } elseif ($this->arrayOperation == 'hidden') {
+                        unset($this->arrayLocal[$k1[0]][$k1[1]][$k2]);
+                    } elseif ($this->arrayOperation == 'only') {
+                        $this->arrayLocalCopy[$k1[0]][$k1[1]][$k2] = $v2;
+                    }
                 }
             }
         }
@@ -322,8 +344,15 @@ class ArrayHandler extends DumperController
                 }
 
                 $this->arrayLocal[$k2[0]][$k2[1]][$k2[2]][$k3] = $v3;
+
                 if ($this->checkInArray($k3)) {
-                    $this->arrayLocal[$k2[0]][$k2[1]][$k2[2]][$k3] = GenericTools::stringRepeat($v3, "*");
+                    if ($this->arrayOperation == 'mask') {
+                        $this->arrayLocal[$k2[0]][$k2[1]][$k2[2]][$k3] = GenericTools::stringRepeat($v3, "*");
+                    } elseif ($this->arrayOperation == 'hidden') {
+                        unset($this->arrayLocal[$k2[0]][$k2[1]][$k2[2]][$k3]);
+                    } elseif ($this->arrayOperation == 'only') {
+                        $this->arrayLocalCopy[$k2[0]][$k2[1]][$k2[2]][$k3] = $v3;
+                    }
                 }
             }
         }
@@ -358,8 +387,15 @@ class ArrayHandler extends DumperController
                 }
 
                 $this->arrayLocal[$k3[0]][$k3[1]][$k3[2]][$k3[3]][$k4] = $v4;
+
                 if ($this->checkInArray($k4)) {
-                    $this->arrayLocal[$k3[0]][$k3[1]][$k3[2]][$k3[3]][$k4] = GenericTools::stringRepeat($v4, "*");
+                    if ($this->arrayOperation == 'mask') {
+                        $this->arrayLocal[$k3[0]][$k3[1]][$k3[2]][$k3[3]][$k4] = GenericTools::stringRepeat($v4, "*");
+                    } elseif ($this->arrayOperation == 'hidden') {
+                        unset($this->arrayLocal[$k3[0]][$k3[1]][$k3[2]][$k3[3]][$k4]);
+                    } elseif ($this->arrayOperation == 'only') {
+                        $this->arrayLocalCopy[$k3[0]][$k3[1]][$k3[2]][$k3[3]][$k4] = $v4;
+                    }
                 }
             }
         }
@@ -394,8 +430,15 @@ class ArrayHandler extends DumperController
                 }
 
                 $this->arrayLocal[$k4[0]][$k4[1]][$k4[2]][$k4[3]][$k4[4]][$k5] = $v5;
+
                 if ($this->checkInArray($k5)) {
-                    $this->arrayLocal[$k4[0]][$k4[1]][$k4[2]][$k4[3]][$k4[4]][$k5] = GenericTools::stringRepeat($v5, "*");
+                    if ($this->arrayOperation == 'mask') {
+                        $this->arrayLocal[$k4[0]][$k4[1]][$k4[2]][$k4[3]][$k4[4]][$k5] = GenericTools::stringRepeat($v5, "*");
+                    } elseif ($this->arrayOperation == 'hidden') {
+                        unset($this->arrayLocal[$k4[0]][$k4[1]][$k4[2]][$k4[3]][$k4[4]][$k5]);
+                    } elseif ($this->arrayOperation == 'only') {
+                        $this->arrayLocalCopy[$k4[0]][$k4[1]][$k4[2]][$k4[3]][$k4[4]][$k5] = $v5;
+                    }
                 }
             }
         }
@@ -430,8 +473,15 @@ class ArrayHandler extends DumperController
                 }
 
                 $this->arrayLocal[$k5[0]][$k5[1]][$k5[2]][$k5[3]][$k5[4]][$k5[5]][$k6] = $v6;
+
                 if ($this->checkInArray($k6)) {
-                    $this->arrayLocal[$k5[0]][$k5[1]][$k5[2]][$k5[3]][$k5[4]][$k5[5]][$k6] = GenericTools::stringRepeat($v6, "*");
+                    if ($this->arrayOperation == 'mask') {
+                        $this->arrayLocal[$k5[0]][$k5[1]][$k5[2]][$k5[3]][$k5[4]][$k5[5]][$k6] = GenericTools::stringRepeat($v6, "*");
+                    } elseif ($this->arrayOperation == 'hidden') {
+                        unset($this->arrayLocal[$k5[0]][$k5[1]][$k5[2]][$k5[3]][$k5[4]][$k5[5]][$k6]);
+                    } elseif ($this->arrayOperation == 'only') {
+                        $this->arrayLocalCopy[$k5[0]][$k5[1]][$k5[2]][$k5[3]][$k5[4]][$k5[5]][$k6] = $v6;
+                    }
                 }
             }
         }
@@ -466,8 +516,15 @@ class ArrayHandler extends DumperController
                 }
 
                 $this->arrayLocal[$k6[0]][$k6[1]][$k6[2]][$k6[3]][$k6[4]][$k6[5]][$k6[6]][$k7] = $v7;
+
                 if ($this->checkInArray($k7)) {
-                    $this->arrayLocal[$k6[0]][$k6[1]][$k6[2]][$k6[3]][$k6[4]][$k6[5]][$k6[6]][$k7] = GenericTools::stringRepeat($v7, "*");
+                    if ($this->arrayOperation == 'mask') {
+                        $this->arrayLocal[$k6[0]][$k6[1]][$k6[2]][$k6[3]][$k6[4]][$k6[5]][$k6[6]][$k7] = GenericTools::stringRepeat($v7, "*");
+                    } elseif ($this->arrayOperation == 'hidden') {
+                        unset($this->arrayLocal[$k6[0]][$k6[1]][$k6[2]][$k6[3]][$k6[4]][$k6[5]][$k6[6]][$k7]);
+                    } elseif ($this->arrayOperation == 'only') {
+                        $this->arrayLocalCopy[$k6[0]][$k6[1]][$k6[2]][$k6[3]][$k6[4]][$k6[5]][$k6[6]][$k7] = $v7;
+                    }
                 }
             }
         }
@@ -502,8 +559,15 @@ class ArrayHandler extends DumperController
                 }
 
                 $this->arrayLocal[$k7[0]][$k7[1]][$k7[2]][$k7[3]][$k7[4]][$k7[5]][$k7[6]][$k7[7]][$k8] = $v8;
+
                 if ($this->checkInArray($k8)) {
-                    $this->arrayLocal[$k7[0]][$k7[1]][$k7[2]][$k7[3]][$k7[4]][$k7[5]][$k7[6]][$k7[7]][$k8] = GenericTools::stringRepeat($v8, "*");
+                    if ($this->arrayOperation == 'mask') {
+                        $this->arrayLocal[$k7[0]][$k7[1]][$k7[2]][$k7[3]][$k7[4]][$k7[5]][$k7[6]][$k7[7]][$k8] = GenericTools::stringRepeat($v8, "*");
+                    } elseif ($this->arrayOperation == 'hidden') {
+                        unset($this->arrayLocal[$k7[0]][$k7[1]][$k7[2]][$k7[3]][$k7[4]][$k7[5]][$k7[6]][$k7[7]][$k8]);
+                    } elseif ($this->arrayOperation == 'only') {
+                        $this->arrayLocalCopy[$k7[0]][$k7[1]][$k7[2]][$k7[3]][$k7[4]][$k7[5]][$k7[6]][$k7[7]][$k8] = $v8;
+                    }
                 }
             }
         }
@@ -538,8 +602,15 @@ class ArrayHandler extends DumperController
                 }
 
                 $this->arrayLocal[$k8[0]][$k8[1]][$k8[2]][$k8[3]][$k8[4]][$k8[5]][$k8[6]][$k8[7]][$k8[8]][$k9] = $v9;
+
                 if ($this->checkInArray($k9)) {
-                    $this->arrayLocal[$k8[0]][$k8[1]][$k8[2]][$k8[3]][$k8[4]][$k8[5]][$k8[6]][$k8[7]][$k8[8]][$k9] = GenericTools::stringRepeat($v9, "*");
+                    if ($this->arrayOperation == 'mask') {
+                        $this->arrayLocal[$k8[0]][$k8[1]][$k8[2]][$k8[3]][$k8[4]][$k8[5]][$k8[6]][$k8[7]][$k8[8]][$k9] = GenericTools::stringRepeat($v9, "*");
+                    } elseif ($this->arrayOperation == 'hidden') {
+                        unset($this->arrayLocal[$k8[0]][$k8[1]][$k8[2]][$k8[3]][$k8[4]][$k8[5]][$k8[6]][$k8[7]][$k8[8]][$k9]);
+                    } elseif ($this->arrayOperation == 'only') {
+                        $this->arrayLocalCopy[$k8[0]][$k8[1]][$k8[2]][$k8[3]][$k8[4]][$k8[5]][$k8[6]][$k8[7]][$k8[8]][$k9] = $v9;
+                    }
                 }
             }
         }
@@ -577,22 +648,36 @@ class ArrayHandler extends DumperController
                 }
 
                 $this->arrayLocal[$k9[0]][$k9[1]][$k9[2]][$k9[3]][$k9[4]][$k9[5]][$k9[6]][$k9[7]][$k9[8]][$k9[9]][$k10] = $v10;
+
                 if ($this->checkInArray($k10)) {
-                    $this->arrayLocal[$k9[0]][$k9[1]][$k9[2]][$k9[3]][$k9[4]][$k9[5]][$k9[6]][$k9[7]][$k9[8]][$k9[9]][$k10] = GenericTools::stringRepeat($v10, "*");
+                    if ($this->arrayOperation == 'mask') {
+                        $this->arrayLocal[$k9[0]][$k9[1]][$k9[2]][$k9[3]][$k9[4]][$k9[5]][$k9[6]][$k9[7]][$k9[8]][$k9[9]][$k10] = GenericTools::stringRepeat($v10, "*");
+                    } elseif ($this->arrayOperation == 'hidden') {
+                        unset($this->arrayLocal[$k9[0]][$k9[1]][$k9[2]][$k9[3]][$k9[4]][$k9[5]][$k9[6]][$k9[7]][$k9[8]][$k9[9]][$k10]);
+                    } elseif ($this->arrayOperation == 'only') {
+                        $this->arrayLocalCopy[$k9[0]][$k9[1]][$k9[2]][$k9[3]][$k9[4]][$k9[5]][$k9[6]][$k9[7]][$k9[8]][$k9[9]][$k10] = $v10;
+                    }
                 }
             }
         }
     }
 
     /**
-     * @description Array Value Mask
+     * @description Array Master Handler
+     * @param string $type #Optional(mask:Default)
      * @return array
      */
-    public function arrayValueMask(): array
+    public function arrayMasterHandler(string $type = 'mask'): array
     {
         if (!$this->arrayData || count($this->arrayData) == 0) {
             return [];
         }
+
+        if (!in_array($type, ['hidden', 'mask', 'only'])) {
+            $type = "mask";
+        }
+
+        $this->arrayOperation = $type;
 
         $this->arrayDigLayers();
 
@@ -603,6 +688,10 @@ class ArrayHandler extends DumperController
             prd("DONE!!!!");
         }
 
+        if ($this->arrayOperation == 'only') {
+            unset($this->arrayLocal);
+            return $this->arrayLocalCopy;
+        }
         return $this->arrayLocal;
     }
 }

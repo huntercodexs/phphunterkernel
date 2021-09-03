@@ -11,8 +11,6 @@ use PhpHunter\Kernel\Controllers\InitServerController;
 abstract class BasicModel extends ConnectionController
 {
     protected array $result = [];
-    protected array $dataOnly = [];
-    protected array $dataHidden = ['password', 'token'];
     protected array $dataMask = [
         'password',
         'key',
@@ -23,8 +21,11 @@ abstract class BasicModel extends ConnectionController
         'passwd',
         'secret',
         'token',
+        'api_token',
         'remember_token'
     ];
+    protected array $dataHidden = [];
+    protected array $dataOnly = [];
 
     /**
      * @description Data Hidden Replace
@@ -55,167 +56,92 @@ abstract class BasicModel extends ConnectionController
 
     /**
      * @description Data Hidden
-     * @param string $apply #Mandatory
      * @return void
      */
-    protected function firstly(string $apply): void
+    protected function firstly(): void
     {
         $array_handler = new ArrayHandler();
-        $array_handler->setArrayData($this->result);
-        $array_handler->setArraySearch($this->dataMask);
 
-        if ($apply == 'mask') {
-            $this->result = $array_handler->arrayValueMask();
-        } elseif($apply == 'hidden') {
-            //TODO: Code here...
+        /**
+         * @description There is a priority in the manipulation of array data, as follows,
+         * see that one case overwrites the previous one...
+     *          1. If defined dataMask
+         *          2. If defined dataHidden overwrite dataMask
+         *              3. If defined dataOnly overwrite dataHidden
+        */
+
+        /*First*/
+        if(isset($this->dataMask) && count($this->dataMask) > 0) {
+            $array_handler->setArrayData($this->result);
+            $array_handler->setArraySearch($this->dataMask);
+            $this->result = $array_handler->arrayMasterHandler('mask');
+        }
+
+        /*Second*/
+        if(isset($this->dataHidden) && count($this->dataHidden) > 0) {
+            $array_handler->setArrayData($this->result);
+            $array_handler->setArraySearch($this->dataHidden);
+            $this->result = $array_handler->arrayMasterHandler('hidden');
+        }
+
+        /*Third*/
+        if(isset($this->dataOnly) && count($this->dataOnly) > 0) {
+            $array_handler->setArrayData($this->result);
+            $array_handler->setArraySearch($this->dataOnly);
+            $this->result = $array_handler->arrayMasterHandler('only');
         }
     }
 
     /**
      * @description Insert [CREATE:HTTP/POST]
-     * @return object
+     * @param array $fields #Mandatoy
+     * @return bool
      */
-    protected function insert()
+    protected function insert(array $fields): bool
     {
-        return $this;
+        return true;
     }
 
     /**
      * @description Select [READ:HTTP/GET]
+     * @param array $fields #Optional
      * @return array
      */
-    protected function select()
+    protected function select(array $fields = []): array
     {
-        //Faker/Test
-        /*$this->result = [
-            "datafirst" => "data-test",
-            [
-                "id" => 1,
-                "name" => "Mathias Kajima",
-                "password" => "1234567890",
-                "age" => 30,
-                "phone" => "1298822113",
-                "midias" => [
-                    "facebook" => "profile.facebook.com",
-                    "whatsapp" => "90211290909",
-                    "youtube" => "youtube.com/profile/123456"
-                ],
-                "address" => [
-                    "rua" => "Rua teste",
-                    "numero" => 123,
-                    "bairro" => "JARDIM TESTE"
-                ]
-            ],
-            [
-                "id" => 2,
-                "name" => "Joeh Biden",
-                "age" => 40,
-                "password" => "8884567890",
-                "phone" => "1298822901"
-            ],
-            "password" => "0x9AOI8AEYFHIUGSHDGJKDGHDSJKFHDJK",
-            "others" => [
-                "password" => "0x1AOI8AEYFHIUGSHDGJKDGHDSJKFHDJK"
-            ],
-            "data" => [
-                "user" => [
-                    "restrict" => [
-                        "password" => "123FSFOIDJFDKLGSGSH",
-                        "name" => "Hugo Boss"
-                    ]
-                ]
-            ],
-            "password2" => [
-                "value" => "0x4AOI8AEYFHIUGSHDGJKDGHDSJKFHDJK"
-            ],
-
-        ];*/
-
-        $this->result = [
-            "DATA" => [
-                "id" => 123456,
-                "description" => "This is only a test",
-                "list" => [
-                    "object1" => "cama",
-                    "object2" => "sofa",
-                    "password" => "123teste"
-                ]
-            ],
-            "SUB-DATA" => "WEBDEV4ALL",
-            "SECRET0" => [
-                "password" => "123128312U2H12821YH822U",
-                "SECRET1" => [
-                    "username" => "New Username Test",
-                    "password" => "PASSWORD-1111111111111111111",
-                    "SECRET2" => [
-                        "password" => "PASSWORD-2222222222222222",
-                        "SECRET3" => [
-                            "password" => "PASSWORD-333333333",
-                            "SECRET4" => [
-                                "password" => "PASSWORD-444444444444444",
-                                "SECRET5" => [
-                                    "password" => "PASSWORD-55555",
-                                    "SECRET6" => [
-                                        "password" => "PASSWORD-666",
-                                        "SECRET7" => [
-                                            "password" => "PASSWORD-777777777777777777",
-                                            "SECRET8" => [
-                                                "password" => "PASSWORD-8888888",
-                                                "SECRET9" => [
-                                                    "password" => "PASSWORD-9999",
-                                                    "SECRET10" => [
-                                                        "password" => "PASSWORD-1101010101010",
-                                                        "SECRET11" => [
-                                                            "password" => "PASSWORD-111111"
-                                                        ],
-                                                    ],
-                                                ],
-                                            ],
-                                        ],
-                                    ],
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-            "POS-SECRET" => [
-                "password" => "1234567890XXXXXXXXXXXXXXXXXXXXX"
-            ]
-        ];
-
-        if(isset($this->dataMask) && count($this->dataMask) > 0) {
-            $this->firstly('mask');
-        }
-
-        return $this->result;
+        $this->firstly();
+        return [];
     }
 
     /**
      * @description Update [UPDATE:HTTP/PUT]
-     * @return object
+     * @param array $fields #Mandatoy
+     * @return bool
      */
-    protected function update()
+    protected function update(array $fields): bool
     {
-        return $this;
+        return true;
     }
 
     /**
      * @description Delete [DELETE:HTTP/DELETE]
-     * @return object
+     * @param int $id #Mandatory
+     * @param array $params #Optional
+     * @return bool
      */
-    protected function delete()
+    protected function delete(int $id, array $params = []): bool
     {
-        return $this;
+        return true;
     }
 
     /**
-     * @description Correct [PATCH:HTTP/PATCH]
-     * @return object
+     * @description Patcher [PATCH:HTTP/PATCH]
+     * @param array $fields #Mandatoy
+     * @return bool
      */
-    protected function correct()
+    protected function patcher(array $fields): bool
     {
-        return $this;
+        return true;
     }
 
 }

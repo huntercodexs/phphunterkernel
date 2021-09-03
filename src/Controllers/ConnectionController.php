@@ -14,6 +14,14 @@ abstract class ConnectionController extends ParametersAbstract
     protected string $password;
 
     /**
+     * @description Set Connection
+     * @return void
+     */
+    public function setConnection(): object
+    {
+    }
+
+    /**
      * @description Open Connection
      * @return void
      */
