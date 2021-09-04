@@ -21,6 +21,7 @@
             "PhpHunter\\Kernel\\": "src/",
             "PhpHunter\\Kernel\\ORM\\": "src/ORM/",
             "PhpHunter\\Kernel\\Views\\": "src/Views/",
+            "PhpHunter\\Kernel\\Builders\\": "src/Builders/",
             "PhpHunter\\Kernel\\Utils\\": "src/Utils/",
             "PhpHunter\\Kernel\\Models\\": "src/Models/",
             "PhpHunter\\Kernel\\Security\\": "src/Security/",
