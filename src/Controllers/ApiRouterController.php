@@ -503,7 +503,7 @@ class ApiRouterController extends ParametersAbstract
                 }
 
                 /*Controller Method Call*/
-                $instanceOfServiceOrController->{$this->noStaticMethod}();
+                $instanceOfServiceOrController->{$this->noStaticMethod}($params_merge);
 
             } elseif ($this->staticServiceOrController != "") {
 

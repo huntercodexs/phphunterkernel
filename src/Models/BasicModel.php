@@ -127,13 +127,25 @@ abstract class BasicModel extends QueryBuilder
     }
 
     /**
-     * @description Create [CREATE:HTTP/POST]
-     * @param array $fields #Mandatoy
+     * @description New [CREATE:HTTP/POST]
+     * @param array $values #Mandatoy
      * @return bool
      */
-    protected function create(array $fields): bool
+    protected function new(array $values): bool
     {
         return true;
+    }
+
+    /**
+     * @description Select [READ:HTTP/GET]
+     * @param int $id #Mandatory
+     * @param array $fields #Optional
+     * @return array
+     */
+    protected function read(int $id, array $fields): array
+    {
+        $this->firstly();
+        return [];
     }
 
     /**
@@ -141,7 +153,7 @@ abstract class BasicModel extends QueryBuilder
      * @param array $fields #Optional
      * @return array
      */
-    protected function read(array $fields = []): array
+    protected function readAll(array $fields): array
     {
         $this->firstly();
         return [];
@@ -149,10 +161,11 @@ abstract class BasicModel extends QueryBuilder
 
     /**
      * @description Up [UPDATE:HTTP/PUT]
+     * @param string $param #Optional
      * @param array $fields #Mandatoy
      * @return bool
      */
-    protected function up(array $fields): bool
+    protected function up(string $param, array $fields): bool
     {
         return true;
     }
@@ -169,11 +182,22 @@ abstract class BasicModel extends QueryBuilder
     }
 
     /**
-     * @description Fix [PATCH:HTTP/PATCH]
+     * @description Fix #BasicModel
+     * @param string $param #Optional
+     * @param array $fields #Optional
+     * @return bool
+     */
+    protected function fix(string $param, array $fields): bool
+    {
+        return true;
+    }
+
+    /**
+     * @description Create [CREATE:HTTP/POST]
      * @param array $fields #Mandatoy
      * @return bool
      */
-    protected function fix(array $fields): bool
+    protected function create(array $fields): bool
     {
         return true;
     }
@@ -181,9 +205,9 @@ abstract class BasicModel extends QueryBuilder
     /**
      * From Query Builder: DO NOT CHANGE !
     */
-    public function insert(array $fields, string $model, string $alias): object
+    public function insert(array $fields): object
     {
-        return parent::insert($fields, $model, $alias);
+        return parent::insert($fields);
     }
 
     public function select(array $fields, string $table, string $alias): object
@@ -191,24 +215,44 @@ abstract class BasicModel extends QueryBuilder
         return parent::select($fields, $table, $alias);
     }
 
-    public function update(array $fields, string $model, string $alias): object
+    public function update(string $table): object
     {
-        return parent::update($fields, $model, $alias);
+        return parent::update($table);
     }
 
-    public function delete(array $fields, string $model, string $alias): object
+    public function delete(string $param): object
     {
-        return parent::delete($fields, $model, $alias);
+        return parent::delete($param);
     }
 
-    public function patcher(array $fields, string $model, string $alias): object
+    public function from(string $table): object
     {
-        return parent::patcher($fields, $model, $alias);
+        return parent::from($table);
+    }
+
+    public function patcher(string $table): object
+    {
+        return parent::patcher($table);
+    }
+
+    public function into(string $table): object
+    {
+        parent::into($table);
+    }
+
+    public function values(array $values): object
+    {
+        parent::values($values);
     }
 
     public function join(string $table, string $alias, string $on): object
     {
         return parent::join($table, $alias, $on);
+    }
+
+    public function set(string $field_name, string $field_value): object
+    {
+        parent::set($field_name, $field_value);
     }
 
     public function leftJoin(string $table, string $alias, string $on): object
@@ -246,9 +290,9 @@ abstract class BasicModel extends QueryBuilder
         return parent::orderBy($by);
     }
 
-    public function limit(string $limit): object
+    public function limit(string $limit, string $cmd = ""): object
     {
-        return parent::limit($limit);
+        return parent::limit($limit, $cmd);
     }
 
     public function getSQL(): null|string

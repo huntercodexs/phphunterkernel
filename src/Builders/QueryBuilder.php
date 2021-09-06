@@ -35,9 +35,29 @@ class QueryBuilder extends ConnectionController
     private bool $activeWhere = false;
 
     /**
+     * @description control use set clausule in the query
+     */
+    private bool $activeSet = false;
+
+    /**
+     * @description storage temporary querys
+     */
+    private string $tmpQuery = "";
+
+    /**
+     * @description to use on query delete
+     */
+    private string $queryDelete = "";
+
+    /**
      * @description storage step by step to create a sql instructions
      */
     private array $sqlBuilder = [];
+
+    /**
+     * @description used when the sql query is update
+     */
+    private array $saveSet = [];
 
     /**
      * @description query after builder
@@ -64,13 +84,13 @@ class QueryBuilder extends ConnectionController
     /**
      * @description Insert
      * @param array $fields #Mandatory
-     * @param string $model #Mandatory
-     * @param string $alias #Optional
      * @return object
      */
-    protected function insert(array $fields, string $model, string $alias): object
+    protected function insert(array $fields): object
     {
         $this->queryCommand = "insert";
+        $fields = implode(', ', $fields);
+        $this->tmpQuery = "\nINSERT INTO {{{_TABLE_NAME_}}}\n\t({$fields})\n";
         return $this;
     }
 
@@ -92,27 +112,26 @@ class QueryBuilder extends ConnectionController
 
     /**
      * @description Update
-     * @param array $fields #Mandatory
-     * @param string $model #Mandatory
-     * @param string $alias #Optional
+     * @param string $table #Optional
      * @return object
      */
-    protected function update(array $fields, string $model, string $alias): object
+    protected function update(string $table): object
     {
         $this->queryCommand = "update";
+        $command = "\nUPDATE {$table}\n";
+        array_push($this->sqlBuilder, $command);
         return $this;
     }
 
     /**
      * @description Delete
-     * @param array $fields #Mandatory
-     * @param string $model #Mandatory
-     * @param string $alias #Optional
+     * @param string $param #Mandatory
      * @return object
      */
-    protected function delete(array $fields, string $model, string $alias): object
+    protected function delete(string $param): object
     {
         $this->queryCommand = "delete";
+        $this->queryDelete = "DELETE FROM {{{_TABLE_NAME_}}} WHERE {$param} ";
         return $this;
     }
 
@@ -123,15 +142,46 @@ class QueryBuilder extends ConnectionController
      * @param string $alias #Optional
      * @return object
      */
-    protected function patcher(array $fields, string $model, string $alias): object
+    protected function patcher(string $table): object
     {
         $this->queryCommand = "patcher";
+        $command = "\n[PATCHER] UPDATE {$table}\n";
+        array_push($this->sqlBuilder, $command);
         return $this;
     }
 
     //--------------------------------------------------------------------------------------------
-    // QUERY CONDITIONS
+    // QUERY CONDITIONS AND COMPLEMENTS
     //--------------------------------------------------------------------------------------------
+
+    /*INSERT*/
+
+    /**
+     * @description Into
+     * @param string $table #Mandatory
+     * @return object
+     */
+    protected function into(string $table): object
+    {
+        $command = str_replace('{{{_TABLE_NAME_}}}',$table, $this->tmpQuery);
+        array_push($this->sqlBuilder, $command);
+        return $this;
+    }
+
+    /**
+     * @description Values
+     * @param array $values #Mandatory
+     * @return object
+     */
+    protected function values(array $values): object
+    {
+        $values = "'".implode("', '", $values)."'";
+        $command = "VALUES\n\t({$values})";
+        array_push($this->sqlBuilder, $command);
+        return $this;
+    }
+
+    /*SELECT*/
 
     /**
      * @description Join
@@ -199,6 +249,64 @@ class QueryBuilder extends ConnectionController
     }
 
     /**
+     * @description Group By
+     * @param string $by #Mandatory
+     * @return object
+     */
+    protected function groupBy(string $by): object
+    {
+        array_push($this->sqlBuilder, "\nGROUP BY\n\t{$by}");
+        return $this;
+    }
+
+    /**
+     * @description Order By
+     * @param string $by #Mandatory
+     * @return object
+     */
+    protected function orderBy(string $by): object
+    {
+        array_push($this->sqlBuilder, "\nORDER BY\n\t{$by}");
+        return $this;
+    }
+
+    /*UPDATE*/
+
+    /**
+     * @description Update
+     * @param string $field_name #Optional
+     * @param string $field_value #Optional
+     * @return object
+     */
+    protected function set(string $field_name, string $field_value): object
+    {
+        if ($this->activeSet == false) {
+            array_push($this->sqlBuilder, "SET");
+            $this->activeSet = true;
+        }
+
+        $command = "{$field_name} = '{$field_value}'";
+        array_push($this->saveSet, $command);
+        return $this;
+    }
+
+    /*DELETE*/
+
+    /**
+     * @description From (Delete)
+     * @param string $table #Mandatory
+     * @return object
+     */
+    protected function from(string $table): object
+    {
+        $command = str_replace('{{{_TABLE_NAME_}}}', $table, $this->queryDelete);
+        array_push($this->sqlBuilder, $command);
+        return $this;
+    }
+
+    /*GENERAL*/
+
+    /**
      * @description Where
      * @param string $where #Mandatory
      * @param string $op #Optional
@@ -221,40 +329,23 @@ class QueryBuilder extends ConnectionController
     }
 
     /**
-     * @description Group By
-     * @param string $by #Mandatory
-     * @return object
-     */
-    protected function groupBy(string $by): object
-    {
-        array_push($this->sqlBuilder, "\nGROUP BY\n\t{$by}");
-        return $this;
-    }
-
-    /**
-     * @description Order By
-     * @param string $by #Mandatory
-     * @return object
-     */
-    protected function orderBy(string $by): object
-    {
-        array_push($this->sqlBuilder, "\nORDER BY\n\t{$by}");
-        return $this;
-    }
-
-    /**
      * @description Limit
      * @param string $limit #Mandatory
+     * @param string $cmd #Optional
      * @return object
      */
-    protected function limit(string $limit): object
+    protected function limit(string $limit, string $cmd = ""): object
     {
-        array_push($this->sqlBuilder, "\nLIMIT {$limit}");
+        if ($cmd == "delete") {
+            array_push($this->sqlBuilder, "LIMIT {$limit}");
+        } else {
+            array_push($this->sqlBuilder, "\nLIMIT {$limit}");
+        }
         return $this;
     }
 
     //--------------------------------------------------------------------------------------------
-    // QUERY BUILDERS
+    // BUILDER
     //--------------------------------------------------------------------------------------------
 
     /**
@@ -286,6 +377,10 @@ class QueryBuilder extends ConnectionController
      */
     private function insertBuilder(): void
     {
+        for ($h = 0; $h < count($this->sqlBuilder); $h++) {
+            $this->queryBuilder .= $this->sqlBuilder[$h];
+        }
+        $this->queryBuilder .= ";";
     }
 
     /**
@@ -306,6 +401,14 @@ class QueryBuilder extends ConnectionController
      */
     private function updateBuilder(): void
     {
+        for ($h = 0; $h < count($this->sqlBuilder); $h++) {
+            $this->queryBuilder .= $this->sqlBuilder[$h];
+            if (preg_match('/SET/', $this->sqlBuilder[$h], $m, PREG_OFFSET_CAPTURE)) {
+                $set_values = implode(', ', $this->saveSet);
+                $this->queryBuilder .= "\n\t".$set_values."\n";
+            }
+        }
+        $this->queryBuilder .= ";";
     }
 
     /**
@@ -314,6 +417,10 @@ class QueryBuilder extends ConnectionController
      */
     private function deleteBuilder(): void
     {
+        for ($h = 0; $h < count($this->sqlBuilder); $h++) {
+            $this->queryBuilder .= $this->sqlBuilder[$h];
+        }
+        $this->queryBuilder .= ";";
     }
 
     /**
@@ -322,6 +429,20 @@ class QueryBuilder extends ConnectionController
      */
     private function patcherBuilder(): void
     {
+        if (count($this->saveSet) > 1) {
+            HunterCatcherController::hunterApiCatcher(
+                [
+                    'error' => "Operation is not allowed for this query, only to patch !"
+                ], 500, true);
+        }
+
+        for ($h = 0; $h < count($this->sqlBuilder); $h++) {
+            $this->queryBuilder .= $this->sqlBuilder[$h];
+            if (preg_match('/SET/', $this->sqlBuilder[$h], $m, PREG_OFFSET_CAPTURE)) {
+                $this->queryBuilder .= "\n\t".$this->saveSet[0]."\n";
+            }
+        }
+        $this->queryBuilder .= ";";
     }
 
     //--------------------------------------------------------------------------------------------
@@ -348,11 +469,11 @@ class QueryBuilder extends ConnectionController
 
     /**
      * @description Query Optimize
-     * @return void
+     * @return string
      */
-    private function queryOptimize(): void
+    private function queryOptimize(): string
     {
-        $this->queryBuilder = preg_replace('/\t/', '',
+        return preg_replace('/\t/', '',
             preg_replace('/\n/', ' ', $this->queryBuilder
             )
         );
@@ -364,7 +485,9 @@ class QueryBuilder extends ConnectionController
      */
     protected function persist(): bool
     {
-        $this->queryOptimize();
+        $query = $this->queryOptimize();
+        pr($query);
+        prd($this->getSQL());
         return true;
     }
 }
