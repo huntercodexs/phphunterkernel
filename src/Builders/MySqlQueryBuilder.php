@@ -518,14 +518,26 @@ class MySqlQueryBuilder extends ConnectionController
     }
 
     /**
-     * @description Persist
+     * @description Persist (use only to data persist)
      * @return bool
      */
     protected function persist(): bool
     {
-        $query = $this->querySanitize();
-        pr($query);
-        prd($this->getSQL());
-        return true;
+        if ($this->queryCommand == "select") {
+            HunterCatcherController::hunterException('Error: Operation not accepted, use run() !', true);
+        }
+        return $this->dispatchTransaction('mysql', $this->querySanitize());
+    }
+
+    /**
+     * @description Run
+     * @return array
+     */
+    protected function run(): array
+    {
+        if ($this->queryCommand != "select") {
+            HunterCatcherController::hunterException('Error: Operation not accepted, use dispatcher() !', true);
+        }
+        return $this->dispatchQuery('mysql', $this->querySanitize());
     }
 }

@@ -35,6 +35,18 @@ class HunterCatcherController extends \Exception
     }
 
     /**
+     * @description Hunter Exception
+     * @param string $data #Mandatory
+     * @param bool $die #Optional
+     * @return void
+     */
+    public static function hunterException(string $data, bool $die = false): void
+    {
+        echo $data;
+        if ($die) die;
+    }
+
+    /**
      * @description Hunter Catcher
      * @param string $data #Mandatory
      * @param int $code #Mandatory
