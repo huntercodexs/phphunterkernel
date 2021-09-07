@@ -63,7 +63,7 @@ class ApiRouterController extends ParametersAbstract
     {
         $this->configurationSetup();
         $this->resetSettings();
-        $this->initParams();
+        $this->initParams(false);
     }
 
     /**
@@ -320,6 +320,63 @@ class ApiRouterController extends ParametersAbstract
     }
 
     /**
+     * @description Prevent Wrong Params
+     * @return void
+     */
+    private function preventWrongParams(): void
+    {
+        $this->paramsMapper();
+
+        if ($this->requestMethod == 'POST') {
+            if(count($this->initParams) == 0) {
+                HunterCatcherController::hunterApiCatcher(
+                    ["error" => "HTTP-Method/POST not allowed, missing paramters !"],
+                    405,
+                    true
+                );
+            }
+        } elseif ($this->requestMethod == 'GET') {
+            if(count($this->initParams) > 0) {
+                HunterCatcherController::hunterApiCatcher(
+                    ["error" => "HTTP-Method/GET not allowed, no expected paramters !"],
+                    405,
+                    true
+                );
+            }
+        } elseif ($this->requestMethod == 'PUT') {
+            if(count($this->initParams) == 0) {
+                HunterCatcherController::hunterApiCatcher(
+                    ["error" => "HTTP-Method/UPDATE not allowed, missing paramters !"],
+                    405,
+                    true
+                );
+            }
+        } elseif ($this->requestMethod == 'DELETE') {
+            if(count($this->initParams) > 0) {
+                HunterCatcherController::hunterApiCatcher(
+                    ["error" => "HTTP-Method/DELETE not allowed, no expected parameter !"],
+                    405,
+                    true
+                );
+            }
+        } elseif ($this->requestMethod == 'PATCH') {
+            if (count($this->initParams) > 1) {
+                HunterCatcherController::hunterApiCatcher(
+                    ["error" => "HTTP-Method/PATCH not allowed to data fix, use UPDATE !"],
+                    405,
+                    true
+                );
+            } elseif (count($this->initParams) == 0){
+                HunterCatcherController::hunterApiCatcher(
+                    ["error" => "HTTP-Method/PATCH not allowed to data fix, missing parameters !"],
+                    405,
+                    true
+                );
+            }
+        }
+    }
+
+    /**
      * @description API Router Runner
      * @param string $verb #Http-Method/Mandatory
      * @param string $route #RoutePath/Mandatory
@@ -329,6 +386,7 @@ class ApiRouterController extends ParametersAbstract
      */
     protected function routerRunner(string $verb, string $route, string $callback1 = "", string $callback2 = ""): void
     {
+        $this->preventWrongParams();
         $this->routeMatcher($verb, $route);
         if ($this->routeFound) {
             $this->runSetup($callback1, $callback2);
@@ -463,7 +521,9 @@ class ApiRouterController extends ParametersAbstract
             }
 
             /*MergeParams - to Static and InstanceOf Services Or Controllers*/
-            $params_merge = array_merge($this->controllerArgsFromUri, $this->initParams, $this->files);
+            $params_merge = array_merge($this->initParams, $this->controllerArgsFromUri, $this->files);
+
+            //prd($params_merge);
 
             /**
              * Service Or Controller
@@ -615,5 +675,4 @@ class ApiRouterController extends ParametersAbstract
         $this->routerRunner("PATCH", $route, $callback1, $callback2);
         return $this;
     }
-
 }

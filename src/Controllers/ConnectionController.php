@@ -6,12 +6,27 @@ use PhpHunter\Kernel\Abstractions\ParametersAbstract;
 
 abstract class ConnectionController extends ParametersAbstract
 {
+    protected array $acceptedDatabase = [
+        "mysql",
+        "mssql",
+        "postgres",
+        "mongodb",
+    ];
+
+    protected string $dbType;
     protected string $connection;
     protected string $server;
     protected string $database;
     protected string $port;
     protected string $user;
     protected string $password;
+
+    /**
+     * @description Constructor Class
+     */
+    public function __construct()
+    {
+    }
 
     /**
      * @description Set Connection

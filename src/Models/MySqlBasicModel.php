@@ -4,11 +4,11 @@ namespace PhpHunter\Kernel\Models;
 
 use PhpHunter\Kernel\Utils\FileTools;
 use PhpHunter\Kernel\Utils\ArrayHandler;
-use PhpHunter\Kernel\Builders\QueryBuilder;
-use PhpHunter\Kernel\Controllers\HunterCatcherController;
+use PhpHunter\Kernel\Builders\MySqlQueryBuilder;
 use PhpHunter\Kernel\Controllers\InitServerController;
+use PhpHunter\Kernel\Controllers\HunterCatcherController;
 
-abstract class BasicModel extends QueryBuilder
+abstract class MySqlBasicModel extends MySqlQueryBuilder
 {
     /**
      * @description Use to storage the result of the querys
@@ -60,6 +60,14 @@ abstract class BasicModel extends QueryBuilder
      * @var string $description
      */
     protected string $description;
+
+    /**
+     * @description Constructor Class
+     */
+    public function __construct()
+    {
+        $this->qb = new MySqlQueryBuilder();
+    }
 
     /**
      * @description Data Hidden Replace
@@ -128,21 +136,23 @@ abstract class BasicModel extends QueryBuilder
 
     /**
      * @description New [CREATE:HTTP/POST]
-     * @param array $values #Mandatoy
+     * @param array $body_params #Mandatoy
+     * @example [POST] http://local.phphunter.dockerized/api/user
      * @return bool
      */
-    protected function new(array $values): bool
+    protected function new(array $body_params): bool
     {
         return true;
     }
 
     /**
      * @description Select [READ:HTTP/GET]
-     * @param int $id #Mandatory
-     * @param array $fields #Optional
+     * @param array $uri_rest_params #Mandatory
+     * @param array $only_fields #Optional
+     * @example [GET] http://local.phphunter.dockerized/api/user/444444
      * @return array
      */
-    protected function read(int $id, array $fields): array
+    protected function read(array $uri_rest_params, array $only_fields = []): array
     {
         $this->firstly();
         return [];
@@ -150,10 +160,12 @@ abstract class BasicModel extends QueryBuilder
 
     /**
      * @description Select [READ:HTTP/GET]
-     * @param array $fields #Optional
+     * @param array $only_fields #Optional
+     * @param array $criteria #Optional
+     * @example [GET] http://local.phphunter.dockerized/api/user
      * @return array
      */
-    protected function readAll(array $fields): array
+    protected function readAll(array $only_fields = [], array $criteria = []): array
     {
         $this->firstly();
         return [];
@@ -161,158 +173,46 @@ abstract class BasicModel extends QueryBuilder
 
     /**
      * @description Up [UPDATE:HTTP/PUT]
-     * @param string $param #Optional
-     * @param array $fields #Mandatoy
+     * @param array $uri_rest_params #Optional
+     * @param array $body_params #Mandatoy
+     * @example [PUT] http://local.phphunter.dockerized/api/user/333333
      * @return bool
      */
-    protected function up(string $param, array $fields): bool
+    protected function up(array $uri_rest_params, array $body_params): bool
     {
         return true;
     }
 
     /**
      * @description Down [DELETE:HTTP/DELETE]
-     * @param int $id #Mandatory
-     * @param array $params #Optional
+     * @param array $uri_rest_params #Mandatory
+     * @example [DELETE] http://local.phphunter.dockerized/api/user/222222
      * @return bool
      */
-    protected function down(int $id, array $params = []): bool
+    protected function down(array $uri_rest_params): bool
     {
         return true;
     }
 
     /**
      * @description Fix #BasicModel
-     * @param string $param #Optional
-     * @param array $fields #Optional
+     * @param array $uri_rest_params #Mandatory
+     * @param array $body_params #Mandatory
+     * @example [PATCH] http://local.phphunter.dockerized/api/user/111111
      * @return bool
      */
-    protected function fix(string $param, array $fields): bool
+    protected function fix(array $uri_rest_params, array $body_params): bool
     {
         return true;
     }
 
     /**
-     * @description Create [CREATE:HTTP/POST]
+     * @description Generate [CREATE:HTTP/POST]
      * @param array $fields #Mandatoy
      * @return bool
      */
-    protected function create(array $fields): bool
+    protected function generate(array $fields): bool
     {
         return true;
     }
-
-    /**
-     * From Query Builder: DO NOT CHANGE !
-    */
-    public function insert(array $fields): object
-    {
-        return parent::insert($fields);
-    }
-
-    public function select(array $fields, string $table, string $alias): object
-    {
-        return parent::select($fields, $table, $alias);
-    }
-
-    public function update(string $table): object
-    {
-        return parent::update($table);
-    }
-
-    public function delete(string $param): object
-    {
-        return parent::delete($param);
-    }
-
-    public function from(string $table): object
-    {
-        return parent::from($table);
-    }
-
-    public function patcher(string $table): object
-    {
-        return parent::patcher($table);
-    }
-
-    public function into(string $table): object
-    {
-        parent::into($table);
-    }
-
-    public function values(array $values): object
-    {
-        parent::values($values);
-    }
-
-    public function join(string $table, string $alias, string $on): object
-    {
-        return parent::join($table, $alias, $on);
-    }
-
-    public function set(string $field_name, string $field_value): object
-    {
-        parent::set($field_name, $field_value);
-    }
-
-    public function leftJoin(string $table, string $alias, string $on): object
-    {
-        return parent::leftJoin($table, $alias, $on);
-    }
-
-    public function rightJoin(string $table, string $alias, string $on): object
-    {
-        return parent::rightJoin($table, $alias, $on);
-    }
-
-    public function outerJoin(string $table, string $alias, string $on): object
-    {
-        return parent::outerJoin($table, $alias, $on);
-    }
-
-    public function innerJoin(string $table, string $alias, string $on): object
-    {
-        return parent::innerJoin($table, $alias, $on);
-    }
-
-    public function where(string $where, string $op = ""): object
-    {
-        return parent::where($where, $op);
-    }
-
-    public function groupBy(string $by): object
-    {
-        return parent::groupBy($by);
-    }
-
-    public function orderBy(string $by): object
-    {
-        return parent::orderBy($by);
-    }
-
-    public function limit(string $limit, string $cmd = ""): object
-    {
-        return parent::limit($limit, $cmd);
-    }
-
-    public function getSQL(): null|string
-    {
-        return parent::pureSQL();
-    }
-
-    public function builder(): object
-    {
-        parent::builder();
-    }
-
-    public function pureSQL(string $query): void
-    {
-        parent::pureQuery($query);
-    }
-
-    public function persist(): bool
-    {
-        return parent::persist();
-    }
-
 }

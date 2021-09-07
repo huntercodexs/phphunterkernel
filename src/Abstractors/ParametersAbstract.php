@@ -36,9 +36,10 @@ abstract class ParametersAbstract extends StatusCodeAbstract
 
     /**
      * @description Init Params
+     * @param bool $io_mapper #Optional
      * @return void
      */
-    protected function initParams(): void
+    protected function initParams(bool $io_mapper = false): void
     {
         $this->requestHeaders = apache_request_headers();
         $this->requestMethod = strtoupper($_SERVER['REQUEST_METHOD']);
@@ -82,6 +83,10 @@ abstract class ParametersAbstract extends StatusCodeAbstract
         $this->contentType = $c_type ?? $this->contentType;
 
         $this->prepareFiles();
+
+        if ($io_mapper) {
+            $this->paramsMapper();
+        }
     }
 
     /**

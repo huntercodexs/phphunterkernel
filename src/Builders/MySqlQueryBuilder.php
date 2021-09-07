@@ -7,7 +7,7 @@ use PhpHunter\Kernel\Utils\ArrayHandler;
 use PhpHunter\Kernel\Controllers\ConnectionController;
 use PhpHunter\Kernel\Controllers\HunterCatcherController;
 
-class QueryBuilder extends ConnectionController
+class MySqlQueryBuilder extends ConnectionController
 {
     /**
      * @description Use to instance of query builder
@@ -65,6 +65,12 @@ class QueryBuilder extends ConnectionController
     private ?string $queryBuilder = null;
 
     /**
+     * @description to control insert query operations
+    */
+    private int $countInsertFields;
+    private int $countInsertValues;
+
+    /**
      * @description the sql commands accepted
     */
     private const __SQL_COMMANDS__ = [
@@ -78,7 +84,7 @@ class QueryBuilder extends ConnectionController
     ];
 
     //--------------------------------------------------------------------------------------------
-    // QUERY COMMANDS
+    // INSERT
     //--------------------------------------------------------------------------------------------
 
     /**
@@ -89,72 +95,11 @@ class QueryBuilder extends ConnectionController
     protected function insert(array $fields): object
     {
         $this->queryCommand = "insert";
+        $this->countInsertFields = count($fields);
         $fields = implode(', ', $fields);
         $this->tmpQuery = "\nINSERT INTO {{{_TABLE_NAME_}}}\n\t({$fields})\n";
         return $this;
     }
-
-    /**
-     * @description Select
-     * @param array $fields #Mandatory
-     * @param string $model #Mandatory
-     * @param string $alias #Optional
-     * @return object
-     */
-    protected function select(array $fields, string $model, string $alias): object
-    {
-        $this->queryCommand = "select";
-        $fields = implode(', ', $fields);
-        $command = "\nSELECT\n\t{$fields}\nFROM\n\t{$model} {$alias}\n";
-        array_push($this->sqlBuilder, $command);
-        return $this;
-    }
-
-    /**
-     * @description Update
-     * @param string $table #Optional
-     * @return object
-     */
-    protected function update(string $table): object
-    {
-        $this->queryCommand = "update";
-        $command = "\nUPDATE {$table}\n";
-        array_push($this->sqlBuilder, $command);
-        return $this;
-    }
-
-    /**
-     * @description Delete
-     * @param string $param #Mandatory
-     * @return object
-     */
-    protected function delete(string $param): object
-    {
-        $this->queryCommand = "delete";
-        $this->queryDelete = "DELETE FROM {{{_TABLE_NAME_}}} WHERE {$param} ";
-        return $this;
-    }
-
-    /**
-     * @description Patcher
-     * @param array $fields #Mandatory
-     * @param string $model #Mandatory
-     * @param string $alias #Optional
-     * @return object
-     */
-    protected function patcher(string $table): object
-    {
-        $this->queryCommand = "patcher";
-        $command = "\n[PATCHER] UPDATE {$table}\n";
-        array_push($this->sqlBuilder, $command);
-        return $this;
-    }
-
-    //--------------------------------------------------------------------------------------------
-    // QUERY CONDITIONS AND COMPLEMENTS
-    //--------------------------------------------------------------------------------------------
-
-    /*INSERT*/
 
     /**
      * @description Into
@@ -175,13 +120,35 @@ class QueryBuilder extends ConnectionController
      */
     protected function values(array $values): object
     {
+        $this->countInsertValues = count($values);
         $values = "'".implode("', '", $values)."'";
         $command = "VALUES\n\t({$values})";
         array_push($this->sqlBuilder, $command);
         return $this;
     }
 
-    /*SELECT*/
+    //--------------------------------------------------------------------------------------------
+    // SELECT
+    //--------------------------------------------------------------------------------------------
+
+    /**
+     * @description Select
+     * @param array $fields #Mandatory
+     * @param string $model #Mandatory
+     * @param string $alias #Optional
+     * @return object
+     */
+    protected function select(array $fields, string $model, string $alias): object
+    {
+        if (count($fields) == 0) {
+            $fields[0] = "*";
+        }
+        $this->queryCommand = "select";
+        $fields = implode(', ', $fields);
+        $command = "\nSELECT\n\t{$fields}\nFROM\n\t{$model} {$alias}\n";
+        array_push($this->sqlBuilder, $command);
+        return $this;
+    }
 
     /**
      * @description Join
@@ -270,7 +237,22 @@ class QueryBuilder extends ConnectionController
         return $this;
     }
 
-    /*UPDATE*/
+    //--------------------------------------------------------------------------------------------
+    // UPDATE
+    //--------------------------------------------------------------------------------------------
+
+    /**
+     * @description Update
+     * @param string $table #Optional
+     * @return object
+     */
+    protected function update(string $table): object
+    {
+        $this->queryCommand = "update";
+        $command = "\nUPDATE {$table}\n";
+        array_push($this->sqlBuilder, $command);
+        return $this;
+    }
 
     /**
      * @description Update
@@ -290,7 +272,21 @@ class QueryBuilder extends ConnectionController
         return $this;
     }
 
-    /*DELETE*/
+    //--------------------------------------------------------------------------------------------
+    // DELETE
+    //--------------------------------------------------------------------------------------------
+
+    /**
+     * @description Delete
+     * @param string $param #Mandatory
+     * @return object
+     */
+    protected function delete(string $param): object
+    {
+        $this->queryCommand = "delete";
+        $this->queryDelete = "DELETE FROM {{{_TABLE_NAME_}}} WHERE {$param} ";
+        return $this;
+    }
 
     /**
      * @description From (Delete)
@@ -304,7 +300,41 @@ class QueryBuilder extends ConnectionController
         return $this;
     }
 
-    /*GENERAL*/
+    //--------------------------------------------------------------------------------------------
+    // UPDATE-FIX
+    //--------------------------------------------------------------------------------------------
+
+    /**
+     * @description Patcher
+     * @param array $fields #Mandatory
+     * @param string $model #Mandatory
+     * @param string $alias #Optional
+     * @return object
+     */
+    protected function patcher(string $table): object
+    {
+        $this->queryCommand = "patcher";
+        $command = "\n/*[PATCHER]*/\nUPDATE {$table}\n";
+        array_push($this->sqlBuilder, $command);
+        return $this;
+    }
+
+    //--------------------------------------------------------------------------------------------
+    // CREATE
+    //--------------------------------------------------------------------------------------------
+
+    /**
+     * @description Create
+     * @return object
+     */
+    protected function create(): object
+    {
+        return $this;
+    }
+
+    //--------------------------------------------------------------------------------------------
+    // GENERIC
+    //--------------------------------------------------------------------------------------------
 
     /**
      * @description Where
@@ -381,6 +411,14 @@ class QueryBuilder extends ConnectionController
             $this->queryBuilder .= $this->sqlBuilder[$h];
         }
         $this->queryBuilder .= ";";
+
+        if ($this->countInsertFields != $this->countInsertValues) {
+            HunterCatcherController::hunterApiCatcher(
+                [
+                    'critical-error' => "Invalid fields/values to insert query !",
+                    'query' => $this->querySanitize()
+                ], 500, true);
+        }
     }
 
     /**
@@ -432,7 +470,7 @@ class QueryBuilder extends ConnectionController
         if (count($this->saveSet) > 1) {
             HunterCatcherController::hunterApiCatcher(
                 [
-                    'error' => "Operation is not allowed for this query, only to patch !"
+                    'error' => "Operation is not allowed for this query, its only patch no update !"
                 ], 500, true);
         }
 
@@ -471,7 +509,7 @@ class QueryBuilder extends ConnectionController
      * @description Query Optimize
      * @return string
      */
-    private function queryOptimize(): string
+    private function querySanitize(): string
     {
         return preg_replace('/\t/', '',
             preg_replace('/\n/', ' ', $this->queryBuilder
@@ -485,7 +523,7 @@ class QueryBuilder extends ConnectionController
      */
     protected function persist(): bool
     {
-        $query = $this->queryOptimize();
+        $query = $this->querySanitize();
         pr($query);
         prd($this->getSQL());
         return true;
