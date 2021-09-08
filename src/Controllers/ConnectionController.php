@@ -73,16 +73,29 @@ abstract class ConnectionController extends ParametersAbstract
 
     /**
      * @description Open Connection
+     * @param string $db_type #Mandatory
      * @return object
      */
-    protected function openConnection(): object
+    protected function openConnection(string $db_type): object
     {
         try {
 
-            $this->connection = new PDO(
-                "{$this->driver}:host={$this->server}:{$this->port};dbname={$this->database}",
-                "{$this->user}",
-                "{$this->password}");
+            switch ($db_type) {
+                case "mysql":
+                    $this->connection = new PDO(
+                        "{$this->driver}:host={$this->server}:{$this->port};dbname={$this->database}",
+                        "{$this->user}",
+                        "{$this->password}");
+                    break;
+
+                case "mssql":
+                    $this->connection = new PDO(
+                        "{$this->driver}:Server={$this->server};Database={$this->database}",
+                        "{$this->user}",
+                        "{$this->password}");
+                    break;
+
+            }
 
             $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
@@ -186,7 +199,7 @@ abstract class ConnectionController extends ParametersAbstract
     {
         $this
             ->setConnection($db_type)
-            ->openConnection()
+            ->openConnection($db_type)
             ->startTransaction()
             ->queryTransaction($query)
             ->rollbackTransaction()
@@ -206,7 +219,7 @@ abstract class ConnectionController extends ParametersAbstract
     {
         $this
             ->setConnection($db_type)
-            ->openConnection()
+            ->openConnection($db_type)
             ->queryTrigger($query)
             ->closeConnection();
 
