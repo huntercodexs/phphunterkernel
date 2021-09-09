@@ -16,7 +16,7 @@ abstract class ParametersAbstract extends StatusCodeAbstract
     protected array $params;
     protected array $files;
 
-    protected string $id;
+    protected int|string $id;
     protected string $email;
     protected string $name;
     protected string $password;

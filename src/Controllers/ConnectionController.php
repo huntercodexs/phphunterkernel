@@ -10,11 +10,20 @@ use PhpHunter\Kernel\Abstractions\ParametersAbstract;
 
 abstract class ConnectionController extends ParametersAbstract
 {
+    /**
+     * @description Use to storage the result of the querys
+     */
+    protected array $dataResult = [];
+
+    /**
+     * @description databases
+     */
     protected array $acceptedDatabase = [
         "mysql",
         "mssql",
         "postgres",
         "mongodb",
+        "sqlite"
     ];
 
     /**
@@ -24,11 +33,6 @@ abstract class ConnectionController extends ParametersAbstract
     protected string $rollbackError;
 
     /**
-     * @description storage query result
-    */
-    protected array $queryResult = [];
-
-    /**
      * @description to handler connection
     */
     protected string|object|array $connection;
@@ -36,7 +40,6 @@ abstract class ConnectionController extends ParametersAbstract
     /**
      * @description connection settings
     */
-    protected string $dbType;
     protected string $driver;
     protected string $server;
     protected string $port;
@@ -45,11 +48,12 @@ abstract class ConnectionController extends ParametersAbstract
     protected string $password;
 
     /**
-     * @description Constructor Class
+     * @description Set database type to use
+     * @var string $dbType #Mandatory
+     * @example mysql
+     * @accepted [mysql, mssql, mongodb, postgres, sqlite]
      */
-    public function __construct()
-    {
-    }
+    protected string $dbType;
 
     /**
      * @description Set Connection
@@ -131,7 +135,7 @@ abstract class ConnectionController extends ParametersAbstract
      */
     protected function queryTrigger(string $query): object
     {
-        $this->queryResult = $this->connection->query($query)->fetchAll(PDO::FETCH_ASSOC);
+        $this->dataResult = $this->connection->query($query)->fetchAll(PDO::FETCH_ASSOC);
         return $this;
     }
 
@@ -213,16 +217,14 @@ abstract class ConnectionController extends ParametersAbstract
      * @description Dispatch Query
      * @param string $db_type #Mandatory
      * @param string $query #Mandatory
-     * @return array
+     * @return void
      */
-    protected function dispatchQuery(string $db_type, string $query): array
+    protected function dispatchQuery(string $db_type, string $query): void
     {
         $this
             ->setConnection($db_type)
             ->openConnection($db_type)
             ->queryTrigger($query)
             ->closeConnection();
-
-        return $this->queryResult;
     }
 }
