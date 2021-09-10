@@ -7,12 +7,25 @@ use PhpHunter\Kernel\Utils\ArrayHandler;
 use PhpHunter\Kernel\Controllers\ConnectionController;
 use PhpHunter\Kernel\Controllers\HunterCatcherController;
 
+/*Specific Builders*/
+use PhpHunter\Kernel\Builders\MySqlBuilder;
+use PhpHunter\Kernel\Builders\MsSqlBuilder;
+use PhpHunter\Kernel\Builders\PostgresBuilder;
+use PhpHunter\Kernel\Builders\MongodbBuilder;
+use PhpHunter\Kernel\Builders\SqliteBuilder;
+
 abstract class QueryBuilder extends ConnectionController
 {
     /**
-     * @description Use to instance of query builder
+     * @description to control insert query operations
      */
-    //protected object $qb;
+    protected int $countInsertFields;
+    protected int $countInsertValues;
+
+    /**
+     * @description storage step by step to create a sql instructions
+     */
+    protected array $pushBuilder = [];
 
     /**
      * @description Alias to model
@@ -25,24 +38,29 @@ abstract class QueryBuilder extends ConnectionController
     protected string $modelName;
 
     /**
-     * @description define wich command is in use
-     */
-    private string $queryCommand;
-
-    /**
-     * @description the model that will be affected
-     */
-    //private string $queryModel;
-
-    /**
      * @description control use where clausule in the query
      */
-    private bool $activeWhere = false;
+    protected bool $activeWhere = false;
+
+    /**
+     * @description used when the sql query is update
+     */
+    protected array $saveSet = [];
 
     /**
      * @description control use set clausule in the query
      */
-    private bool $activeSet = false;
+    protected bool $activeSet = false;
+
+    /**
+     * @description Columns on model (in database)
+     */
+    protected array $modelColumns = [];
+
+    /**
+     * @description define wich command is in use
+     */
+    private string $queryCommand;
 
     /**
      * @description storage temporary querys
@@ -55,25 +73,14 @@ abstract class QueryBuilder extends ConnectionController
     private string $queryDelete = "";
 
     /**
-     * @description storage step by step to create a sql instructions
-     */
-    private array $sqlBuilder = [];
-
-    /**
-     * @description used when the sql query is update
-     */
-    private array $saveSet = [];
-
-    /**
      * @description query after builder
      */
     private ?string $queryBuilder = null;
 
     /**
-     * @description to control insert query operations
-    */
-    private int $countInsertFields;
-    private int $countInsertValues;
+     * @description the specific builder to db_type
+     */
+    private object $currentBuilder;
 
     /**
      * @description the sql commands accepted
@@ -88,6 +95,11 @@ abstract class QueryBuilder extends ConnectionController
         "CREATE"
     ];
 
+    /**
+     * @description Namespace for builders
+    */
+    private string $builders = "PhpHunter\\Kernel\\Builders\\";
+
     //--------------------------------------------------------------------------------------------
     // INSERT
     //--------------------------------------------------------------------------------------------
@@ -99,14 +111,10 @@ abstract class QueryBuilder extends ConnectionController
      */
     protected function insert(array $values): object
     {
-        $fields = $this->getModelColumns();
         $this->queryCommand = "insert";
-        $this->countInsertFields = count($fields);
-        $fields = implode(', ', $fields);
-        $this->countInsertValues = count($values);
-        $values = "'".implode("', '", $values)."'";
-        $command = "\nINSERT INTO {$this->modelName}\n\t({$fields})\nVALUES\n\t({$values})";
-        array_push($this->sqlBuilder, $command);
+        $builder = "{$this->builders}{$this->targetBuilder}";
+        $this->currentBuilder = new $builder($this);
+        $this->currentBuilder->_insert_($this->modelColumns, $values);
         return $this;
     }
 
@@ -116,20 +124,16 @@ abstract class QueryBuilder extends ConnectionController
 
     /**
      * @description Select
-     * @param array $fields #Mandatory
+     * @param array $fields #Optional
+     * @param bool $distinct #Optional
      * @return object
      */
-    protected function select(array $fields): object
+    protected function select(array $fields = [], bool $distinct = false): object
     {
-        if (count($fields) == 0) {
-            $fields[0] = "*";
-        }
-
         $this->queryCommand = "select";
-        $fields = implode(', ', $fields);
-        $command = "\nSELECT\n\t{$fields}\nFROM\n\t{$this->modelName} {$this->alias}\n";
-        array_push($this->sqlBuilder, $command);
-
+        $builder = "{$this->builders}{$this->targetBuilder}";
+        $this->currentBuilder = new $builder($this);
+        $this->currentBuilder->_select_($fields, $distinct);
         return $this;
     }
 
@@ -142,7 +146,7 @@ abstract class QueryBuilder extends ConnectionController
      */
     protected function join(string $table, string $alias, string $on): object
     {
-        array_push($this->sqlBuilder, "\tJOIN {$table} {$alias} {$on}\n");
+        $this->currentBuilder->_join_($table, $alias, $on);
         return $this;
     }
 
@@ -155,7 +159,7 @@ abstract class QueryBuilder extends ConnectionController
      */
     protected function leftJoin(string $table, string $alias, string $on): object
     {
-        array_push($this->sqlBuilder, "\tLEFT JOIN {$table} {$alias} {$on}\n");
+        $this->currentBuilder->_leftJoin_($table, $alias, $on);
         return $this;
     }
 
@@ -168,12 +172,12 @@ abstract class QueryBuilder extends ConnectionController
      */
     protected function rightJoin(string $table, string $alias, string $on): object
     {
-        array_push($this->sqlBuilder, "\tRIGHT JOIN {$table} {$alias} {$on}\n");
+        $this->currentBuilder->_rightJoin_($table, $alias, $on);
         return $this;
     }
 
     /**
-     * @description Inner Select
+     * @description Inner Join
      * @param string $table #Mandatory
      * @param string $alias #Mandatory
      * @param string $on #Mandatory
@@ -181,12 +185,12 @@ abstract class QueryBuilder extends ConnectionController
      */
     protected function innerJoin(string $table, string $alias, string $on): object
     {
-        array_push($this->sqlBuilder, "\tINNER JOIN {$table} {$alias} {$on}\n");
+        $this->currentBuilder->_innerJoin_($table, $alias, $on);
         return $this;
     }
 
     /**
-     * @description Outer Select
+     * @description Outer Join
      * @param string $table #Mandatory
      * @param string $alias #Mandatory
      * @param string $on #Mandatory
@@ -194,7 +198,86 @@ abstract class QueryBuilder extends ConnectionController
      */
     protected function outerJoin(string $table, string $alias, string $on): object
     {
-        array_push($this->sqlBuilder, "\tOUTER JOIN {$table} {$alias} {$on}\n");
+        $this->currentBuilder->_outerJoin_($table, $alias, $on);
+        return $this;
+    }
+
+    /**
+     * @description Full Join
+     * @param string $table #Mandatory
+     * @param string $alias #Mandatory
+     * @param string $on #Mandatory
+     * @return object
+     */
+    protected function fullJoin(string $table, string $alias, string $on): object
+    {
+        $this->currentBuilder->_fullJoin_($table, $alias, $on);
+        return $this;
+    }
+
+    /**
+     * @description Cross Join
+     * @param string $table #Mandatory
+     * @param string $alias #Mandatory
+     * @param string $on #Mandatory
+     * @return object
+     */
+    protected function crossJoin(string $table, string $alias, string $on): object
+    {
+        $this->currentBuilder->_crossJoin_($table, $alias, $on);
+        return $this;
+    }
+
+    /**
+     * @description Full Outer Join
+     * @param string $table #Mandatory
+     * @param string $alias #Mandatory
+     * @param string $on #Mandatory
+     * @return object
+     */
+    protected function fullOuterJoin(string $table, string $alias, string $on): object
+    {
+        $this->currentBuilder->_fullOuterJoin_($table, $alias, $on);
+        return $this;
+    }
+
+    /**
+     * @description Union
+     * @return object
+     */
+    protected function union(): object
+    {
+        $this->currentBuilder->_union_();
+        return $this;
+    }
+
+    /**
+     * @description Union All
+     * @return object
+     */
+    protected function unionAll(): object
+    {
+        $this->currentBuilder->_unionAll_();
+        return $this;
+    }
+
+    /**
+     * @description Intersect
+     * @return object
+     */
+    protected function intersect(): object
+    {
+        $this->currentBuilder->_intersect_();
+        return $this;
+    }
+
+    /**
+     * @description Except
+     * @return object
+     */
+    protected function except(): object
+    {
+        $this->currentBuilder->_except_();
         return $this;
     }
 
@@ -205,7 +288,7 @@ abstract class QueryBuilder extends ConnectionController
      */
     protected function groupBy(string $by): object
     {
-        array_push($this->sqlBuilder, "\nGROUP BY\n\t{$by}");
+        $this->currentBuilder->_groupBy_($by);
         return $this;
     }
 
@@ -216,7 +299,7 @@ abstract class QueryBuilder extends ConnectionController
      */
     protected function orderBy(string $by): object
     {
-        array_push($this->sqlBuilder, "\nORDER BY\n\t{$by}");
+        $this->currentBuilder->_orderBy_($by);
         return $this;
     }
 
@@ -231,8 +314,9 @@ abstract class QueryBuilder extends ConnectionController
     protected function update(): object
     {
         $this->queryCommand = "update";
-        $command = "\nUPDATE {$this->modelName}\n";
-        array_push($this->sqlBuilder, $command);
+        $builder = "{$this->builders}{$this->targetBuilder}";
+        $this->currentBuilder = new $builder($this);
+        $this->currentBuilder->_update_();
         return $this;
     }
 
@@ -244,13 +328,7 @@ abstract class QueryBuilder extends ConnectionController
      */
     protected function set(string $field_name, string $field_value): object
     {
-        if ($this->activeSet == false) {
-            array_push($this->sqlBuilder, "SET");
-            $this->activeSet = true;
-        }
-
-        $command = "{$field_name} = '{$field_value}'";
-        array_push($this->saveSet, $command);
+        $this->currentBuilder->_set_($field_name, $field_value);
         return $this;
     }
 
@@ -266,8 +344,9 @@ abstract class QueryBuilder extends ConnectionController
     protected function delete(int|string $id): object
     {
         $this->queryCommand = "delete";
-        $command = "DELETE FROM {$this->modelName} WHERE id = '{$id}' LIMIT 1";
-        array_push($this->sqlBuilder, $command);
+        $builder = "{$this->builders}{$this->targetBuilder}";
+        $this->currentBuilder = new $builder($this);
+        $this->currentBuilder->_delete_($id);
         return $this;
     }
 
@@ -282,8 +361,9 @@ abstract class QueryBuilder extends ConnectionController
     protected function patcher(): object
     {
         $this->queryCommand = "patcher";
-        $command = "\n/*[PATCHER]*/\nUPDATE {$this->modelName}\n";
-        array_push($this->sqlBuilder, $command);
+        $builder = "{$this->builders}{$this->targetBuilder}";
+        $this->currentBuilder = new $builder($this);
+        $this->currentBuilder->_patcher_();
         return $this;
     }
 
@@ -312,17 +392,7 @@ abstract class QueryBuilder extends ConnectionController
      */
     protected function where(string $where, string $op = ""): object
     {
-        if ($this->activeWhere == false) {
-            array_push($this->sqlBuilder, "WHERE");
-            $this->activeWhere = true;
-        }
-
-        if ($op != "") {
-            array_push($this->sqlBuilder, "\n\t{$op} {$where}");
-        } else {
-            array_push($this->sqlBuilder, "\n\t{$where}");
-        }
-
+        $this->currentBuilder->_where_($where, $op);
         return $this;
     }
 
@@ -334,11 +404,7 @@ abstract class QueryBuilder extends ConnectionController
      */
     protected function limit(string $limit, string $cmd = ""): object
     {
-        if ($cmd == "delete") {
-            array_push($this->sqlBuilder, "LIMIT {$limit}");
-        } else {
-            array_push($this->sqlBuilder, "\nLIMIT {$limit}");
-        }
+        $this->currentBuilder->_limit_($limit, $cmd);
         return $this;
     }
 
@@ -375,8 +441,8 @@ abstract class QueryBuilder extends ConnectionController
      */
     private function insertBuilder(): void
     {
-        for ($h = 0; $h < count($this->sqlBuilder); $h++) {
-            $this->queryBuilder .= $this->sqlBuilder[$h];
+        for ($h = 0; $h < count($this->pushBuilder); $h++) {
+            $this->queryBuilder .= $this->pushBuilder[$h];
         }
         $this->queryBuilder .= ";";
 
@@ -395,8 +461,8 @@ abstract class QueryBuilder extends ConnectionController
      */
     private function selectBuilder(): void
     {
-        for ($h = 0; $h < count($this->sqlBuilder); $h++) {
-            $this->queryBuilder .= $this->sqlBuilder[$h];
+        for ($h = 0; $h < count($this->pushBuilder); $h++) {
+            $this->queryBuilder .= $this->pushBuilder[$h];
         }
         $this->queryBuilder .= ";";
     }
@@ -408,9 +474,9 @@ abstract class QueryBuilder extends ConnectionController
     private function updateBuilder(): void
     {
 
-        for ($h = 0; $h < count($this->sqlBuilder); $h++) {
-            $this->queryBuilder .= $this->sqlBuilder[$h];
-            if (preg_match('/SET/', $this->sqlBuilder[$h], $m, PREG_OFFSET_CAPTURE)) {
+        for ($h = 0; $h < count($this->pushBuilder); $h++) {
+            $this->queryBuilder .= $this->pushBuilder[$h];
+            if (preg_match('/SET/', $this->pushBuilder[$h], $m, PREG_OFFSET_CAPTURE)) {
                 $set_values = implode(', ', $this->saveSet);
                 $this->queryBuilder .= "\n\t".$set_values."\n";
             }
@@ -426,8 +492,8 @@ abstract class QueryBuilder extends ConnectionController
      */
     private function deleteBuilder(): void
     {
-        for ($h = 0; $h < count($this->sqlBuilder); $h++) {
-            $this->queryBuilder .= $this->sqlBuilder[$h];
+        for ($h = 0; $h < count($this->pushBuilder); $h++) {
+            $this->queryBuilder .= $this->pushBuilder[$h];
         }
         $this->queryBuilder .= ";";
     }
@@ -445,9 +511,9 @@ abstract class QueryBuilder extends ConnectionController
                 ], 500, true);
         }
 
-        for ($h = 0; $h < count($this->sqlBuilder); $h++) {
-            $this->queryBuilder .= $this->sqlBuilder[$h];
-            if (preg_match('/SET/', $this->sqlBuilder[$h], $m, PREG_OFFSET_CAPTURE)) {
+        for ($h = 0; $h < count($this->pushBuilder); $h++) {
+            $this->queryBuilder .= $this->pushBuilder[$h];
+            if (preg_match('/SET/', $this->pushBuilder[$h], $m, PREG_OFFSET_CAPTURE)) {
                 $this->queryBuilder .= "\n\t".$this->saveSet[0]."\n";
             }
         }
@@ -470,7 +536,7 @@ abstract class QueryBuilder extends ConnectionController
                 ], 500, true);
         }
 
-        if (!in_array('WHERE', $this->sqlBuilder)) {
+        if (!in_array('WHERE', $this->pushBuilder)) {
             HunterCatcherController::hunterApiCatcher(
                 [
                     'critical-error' => "Invalid operation for Update (missing WHERE) !",
@@ -509,6 +575,8 @@ abstract class QueryBuilder extends ConnectionController
      */
     private function querySanitize(): string
     {
+        pr($this->queryBuilder);
+        unset($this->currentBuilder);
         return preg_replace('/\t/', '',
             preg_replace('/\n/', ' ', $this->queryBuilder
             )
@@ -524,7 +592,7 @@ abstract class QueryBuilder extends ConnectionController
         if ($this->queryCommand == "select") {
             HunterCatcherController::hunterException('Error: Operation not accepted, use run() !', true);
         }
-        return $this->dispatchTransaction('mysql', $this->querySanitize());
+        return $this->dispatchTransaction($this->dbType, $this->querySanitize());
     }
 
     /**
@@ -536,30 +604,100 @@ abstract class QueryBuilder extends ConnectionController
         if ($this->queryCommand != "select" && $this->queryCommand != "pure") {
             HunterCatcherController::hunterException('Error: Operation not accepted, use dispatcher() !', true);
         }
-        $this->dispatchQuery('mysql', $this->querySanitize());
+        $this->dispatchQuery($this->dbType, $this->querySanitize());
+    }
+
+    //--------------------------------------------------------------------------------------------
+    // SETTERS & GETTERS
+    //--------------------------------------------------------------------------------------------
+
+    public function setCountInsertFields(int $count): void
+    {
+        $this->countInsertFields = $count;
+    }
+
+    public function getCountInsertFields(): int
+    {
+        return $this->countInsertFields;
+    }
+
+    public function setCountInsertValues(int $count): void
+    {
+        $this->countInsertValues = $count;
+    }
+
+    public function getCountInsertValues(): int
+    {
+        return $this->countInsertValues;
+    }
+
+    public function setPushBuilder(string $push, int $idx = -1): void
+    {
+        if ($idx != "-1"){
+            $this->pushBuilder[$idx] = $push;
+        } else {
+            array_push($this->pushBuilder, $push);
+        }
+    }
+
+    public function getPushBuilder(): array
+    {
+        return $this->pushBuilder;
+    }
+
+    public function setAlias(string $alias): void
+    {
+        $this->alias = $alias;
+    }
+
+    public function getAlias(): string
+    {
+        return $this->alias;
+    }
+
+    public function setModelName(string $name): void
+    {
+        $this->modelName = $name;
+    }
+
+    public function getNameModel(): string
+    {
+        return $this->modelName;
+    }
+
+    public function setActiveWhere(bool $active): void
+    {
+        $this->activeWhere = $active;
+    }
+
+    public function getActiveWhere(): bool
+    {
+        return $this->activeWhere;
+    }
+
+    public function setSaveSet(string $save): void
+    {
+        array_push($this->saveSet, $save);
+    }
+
+    public function getSaveSet(): array
+    {
+        return $this->saveSet;
+    }
+
+    public function setActiveSet(bool $active): void
+    {
+        $this->activeSet = $active;
+    }
+
+    public function getActiveSet(): bool
+    {
+        return $this->activeSet;
     }
 
     //--------------------------------------------------------------------------------------------
     // TESTERS & HELPERS
     //--------------------------------------------------------------------------------------------
-
-    /**
-     * @description Get Model Columns
-     * @return array
-     */
-    protected function getModelColumns(): array
-    {
-        $modelColumns = [];
-        $this->pureSQL("SHOW COLUMNS FROM {$this->modelName}")->run();
-
-        foreach ($this->dataResult as $item) {
-            $modelColumns[] = $item['Field'];
-
-        }
-        unset($this->dataResult);
-
-        return $modelColumns;
-    }
 
     /**
      * @description Test Query Builder

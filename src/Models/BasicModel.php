@@ -8,10 +8,6 @@ use PhpHunter\Kernel\Builders\QueryBuilder;
 use PhpHunter\Kernel\Controllers\InitServerController;
 use PhpHunter\Kernel\Controllers\HunterCatcherController;
 
-/*Specific Builders*/
-use PhpHunter\Kernel\Builders\MySqlQueryBuilder;
-use PhpHunter\Kernel\Builders\MsSqlQueryBuilder;
-
 abstract class BasicModel extends QueryBuilder
 {
     //-----------------------------------------------------------------------------------------------------------
@@ -19,9 +15,14 @@ abstract class BasicModel extends QueryBuilder
     //-----------------------------------------------------------------------------------------------------------
 
     /**
-     * @description Use to storage the result of the querys
-    */
-    //protected array $dataResult = [];
+     * @description Name of Model
+     */
+    protected string $modelName;
+
+    /**
+     * @description Alias to model
+     */
+    protected string $alias;
 
     /**
      * @description Use to mask fields in results that don't can is clear, note that
@@ -57,19 +58,9 @@ abstract class BasicModel extends QueryBuilder
     protected array $dataFill = [];
 
     /**
-     * @description Alias to model
-     */
-    protected string $alias;
-
-    /**
-     * @description Name of Model
-     */
-    protected string $modelName;
-
-    /**
      * @description Columns on model (in database)
      */
-    //protected array $modelColumns = [];
+    protected array $modelColumns = [];
 
     //-----------------------------------------------------------------------------------------------------------
     // Basic Fields Model
@@ -132,14 +123,6 @@ abstract class BasicModel extends QueryBuilder
     //-----------------------------------------------------------------------------------------------------------
     // Basic Operations Model
     //-----------------------------------------------------------------------------------------------------------
-
-    /**
-     * @description Constructor Class
-     */
-    /*public function __construct()
-    {
-        $this->qb = new QueryBuilder();
-    }*/
 
     /**
      * @description Data Hidden Replace
@@ -282,6 +265,8 @@ abstract class BasicModel extends QueryBuilder
         $this->dbType = $db_type;
         $this->modelName = self::getModelName(get_called_class());
         $this->alias = self::firstLetterModelName($this->modelName);
+        $this->modelColumns = $this->getModelColumns($db_type);
+        $this->targetBuilder = $this->getTargetBuilder($db_type);
     }
 
     /**
@@ -318,6 +303,60 @@ abstract class BasicModel extends QueryBuilder
         }
 
         return (strtolower(implode("_", $table_name)));
+    }
+
+    /**
+     * @description Get Model Columns
+     * @param string $db_type #Mandatory
+     * @return array
+     */
+    private function getModelColumns(string $db_type): array
+    {
+        $modelColumns = [];
+
+        switch ($db_type) {
+            case "mysql":
+                $this->pureSQL("SHOW COLUMNS FROM {$this->modelName}")->run();
+                foreach ($this->dataResult as $item) {
+                    $modelColumns[] = $item['Field'];
+
+                }
+                break;
+            case "mssql":
+                //"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{$this->modelName}'"
+                $this->pureSQL("SELECT * FROM sys.columns WHERE object_id = object_id('{$this->modelName}')")->run();
+                foreach ($this->dataResult as $item) {
+                    if ($item['is_identity'] == '0') {
+                        $modelColumns[] = $item['name'];
+                    }
+                }
+                break;
+            default:
+                HunterCatcherController::hunterException(
+                    'Basic Model Exception: Invalid db_type on getModelColumns',
+                    true);
+        }
+
+        unset($this->dataResult);
+
+        return $modelColumns;
+    }
+
+    /**
+     * @description Get Target Builder
+     * @param string $db_type #Mandatory
+     * @return string
+     */
+    private function getTargetBuilder(string $db_type): string
+    {
+        if (!array_key_exists($db_type, $this->acceptedDatabase)) {
+            HunterCatcherController::hunterException(
+                "Basic Model Exception: Missing Builder to db_type {$db_type}",
+                true
+            );
+        }
+
+        return $this->acceptedDatabase[$db_type];
     }
 
     //-----------------------------------------------------------------------------------------------------------

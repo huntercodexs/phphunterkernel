@@ -16,14 +16,14 @@ abstract class ConnectionController extends ParametersAbstract
     protected array $dataResult = [];
 
     /**
-     * @description databases
+     * @description databases and builders
      */
     protected array $acceptedDatabase = [
-        "mysql",
-        "mssql",
-        "postgres",
-        "mongodb",
-        "sqlite"
+        "mysql" => "MySqlBuilder",
+        "mssql" => "MsSqlBuilder",
+        "postgres" => "PostgresBuilder",
+        "mongodb" => "MongodbBuilder",
+        "sqlite" => "SqliteBuilder"
     ];
 
     /**
